@@ -1163,7 +1163,7 @@ async function handleTokens() {
 }
 //Loop
 const interval = setInterval(async function() {
-  await handleTokens()
+  //await handleTokens()
 },21600000) //
 
 function respond(res, data) {
