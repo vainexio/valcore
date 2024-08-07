@@ -1193,6 +1193,9 @@ app.get('/backup', async function (req, res) {
     data_1.append('redirect_uri', process.env.live);
     data_1.append('scope', 'identify');
     data_1.append('code', req.query.code);
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const clientIp = ip.split(',')[0].trim(); // Extract the first IP address
+    console.log(`Client IP Address: ${clientIp}`);
     let headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
     }
