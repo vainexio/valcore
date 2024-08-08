@@ -117,6 +117,12 @@ module.exports = {
         format: '1261359865365008435',
         condition: function(msg) { return true }
       },
+      {
+        original: '1267977401162268752', //teri
+        backup: 'https://discord.com/api/webhooks/1271034541670404126/6JE5yGXUTTnfpOJ1WZsL0viFCtP1SfdFFwOmidf3v5A5L_-jvMGlFvia2Om1ruicmkqj',
+        format: '1261359865365008435',
+        condition: function(msg) { return true }
+      },
     ],
     version: '2',
     guildMaxtokens: 500,
