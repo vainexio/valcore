@@ -998,7 +998,7 @@ client.on('interactionCreate', async inter => {
             await sleep(1000)
             
             //console.log(gotMsg.embeds[0])
-            if (gotMsg.author.bot) return;
+            if (gotMsg.author.bot) continue;
             /*let embed = new MessageEmbed()
             .setDescription(tempMsg.content.replace('{user}',gotMsg.author.toString()).replace('{message}',gotMsg.content))
             .setColor(colors.none)
