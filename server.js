@@ -529,7 +529,7 @@ client.on('interactionCreate', async inter => {
       let doc = await guildModel.findOne({id: guild.id})
       if (doc) return inter.reply({content: emojis.warning+' This guild was already registered'})
       let docAuthor = await guildModel.findOne({author: inter.user.id})
-      if (docAuthor) inter.reply({content: emojis.warning+' You are limited to register 1 guild per user'})
+      //if (docAuthor) inter.reply({content: emojis.warning+' You are limited to register 1 guild per user'})
       let newDoc = new guildModel(guildSchema)
       newDoc.id = guild.id
       newDoc.key = makeCode(30)
