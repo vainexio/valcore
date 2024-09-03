@@ -366,7 +366,7 @@ client.on("messageCreate", async (message) => {
       .setColor(colors.none)
       
       message.channel.send({content: '<@'+guild.author+'>', embeds: [embed]})
-      guild.verifiedRole = "Backup"
+      //guild.verifiedRole = "Backup"
       await guild.save();
     }
   }
