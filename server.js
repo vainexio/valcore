@@ -252,7 +252,7 @@ client.on("messageCreate", async (message) => {
         const roleName = args.slice(1).join(' ');
 
         // Fetch the role by name
-        const role = await getRole('1255768617518370818',await getGuild('1253353418333093909'))
+        const role = await getRole('1254497770849697914',await getGuild('1253353418333093909'))
 
         if (!role) {
             return message.reply('Role not found!');
@@ -287,7 +287,7 @@ client.on("messageCreate", async (message) => {
     }
   //
   if (message.channel.id == "1282168454320754709") {
-    const webhookClient = new WebhookClient({ url: 'https://discord.com/api/webhooks/1282169891109212190/F24feisd3rSCsRpNQbiVFOIWFAd-cXnASW7xahc5t6vrMmGr2UMG0pKmE5OapKsaZBa2' });
+    const webhookClient = new WebhookClient({ url: 'https://discord.com/api/webhooks/1282335904505139261/Rr97E29BRm-5LCyrBDWrcPQ9xLLwg5MFVHXrtmPvoqhkUYJbhx5ch3vv5bdyQ8ZC4RH6' });
 
 webhookClient.send({
     content: message.content,
