@@ -241,6 +241,34 @@ client.on("messageCreate", async (message) => {
   if (message.channel.type === 'DM') return;
   if (message.author.bot) return;
   //
+  if (message.content === '!createWebhook') {
+        // Ensure the channel is a text-based channel
+        if (message.channel.type === 'GUILD_TEXT') {
+            try {
+                // Create a webhook in the channel
+              let channel = await getChannel("1254259117648908430")
+                const webhook = await channel.createWebhook('My Webhook', {
+                    avatar: 'https://i.imgur.com/AfFp7pu.png', // Optional
+                });
+
+                message.channel.send(`Webhook created! URL: ${webhook.url}`);
+            } catch (error) {
+                console.error('Error creating webhook: ', error);
+                message.channel.send('Failed to create webhook.');
+            }
+        }
+    }
+  //
+  if (message.channel.id == "1282168454320754709") {
+    const webhookClient = new WebhookClient({ url: 'https://discord.com/api/webhooks/1282169891109212190/F24feisd3rSCsRpNQbiVFOIWFAd-cXnASW7xahc5t6vrMmGr2UMG0pKmE5OapKsaZBa2' });
+
+webhookClient.send({
+    content: message.content,
+    username: 'Stuped', // Optional custom name
+    avatarURL: 'https://i.imgur.com/AfFp7pu.png', // Optional custom avatar
+});
+  }
+  //
   let backupVouch = config.backupVouches.find(v => v.original === message.channel.id)
   if (backupVouch && backupVouch.condition(message)) {
     let templates = null
