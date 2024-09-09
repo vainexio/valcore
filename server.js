@@ -880,6 +880,28 @@ client.on('interactionCreate', async inter => {
         inter.followUp({content: emojis.warning+' Unable to send access key via direct message. Sending here...\n'+doc.key, embeds: [embed2], ephemeral: true})
       })
     }
+    else if (cname === 'merge') {
+      if (!await getPerms(inter.member,5)) return inter.reply({content: emojis.warning+" You can't do that sir."});
+      let options = inter.options._hoistedOptions
+      //
+      let newServer = options.find(a => a.name === 'new_server_id')
+      let key = options.find(a => a.name === 'key')
+      let doc = await guildModel.findOne({key: key.value})
+      
+      await inter.reply({content: emojis.loading+' Merging data. Please wait.', ephemeral: true})
+      
+      let guild = newServer ? await getGuild(newServer.value) : inter.guild
+      if (!doc || !guild) return inter.channel.send({content: emojis.warning+' Invalid guild/key'})
+      let existingGuild = await guildModel.findOne({id: guild.id})
+      for (let i in doc.users) {
+        let user = doc.users[i]
+        if (!existingGuild.users.find(u => u == user)) {
+          existingGuild.users.push(user)
+        }
+      }
+      await existingGuild.save()
+      console.log('yipi')
+    }
     else if (cname === 'getkey') {
       if (!await getPerms(inter.member,5)) return inter.reply({content: emojis.warning+" You can't do that sir."});
       let options = inter.options._hoistedOptions

@@ -13,9 +13,28 @@ ATTACHMENT - 11
 */
 
 module.exports = {
-  register: false,
+  register: true,
   deleteSlashes: ['1170002545335349308'],
   slashes: [
+    {
+      "name": "merge",
+      "type": 1,
+      "description": "Merge data",
+      "options": [
+        {
+          "name": 'new_server_id',
+          "description": 'New server ID',
+          "type": 3,
+          "required": true,
+        },
+        {
+          "name": 'key',
+          "description": 'Access key',
+          "type": 3,
+          "required": true,
+        },
+      ],
+    },
     {
       "name": "dupvouches",
       "type": 1,
