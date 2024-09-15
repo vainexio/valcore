@@ -935,7 +935,7 @@ client.on('interactionCreate', async inter => {
      let key = options.find(a => a.name === 'key')
      let doc = await guildModel.findOne({key: key.value})
      await inter.reply({content: emojis.loading+" Changing role", ephemeral: true})
-     if (!doc) return inter.reply({content: emojis.warning+' Invalid Key', ephemeral: true})
+     if (!doc) return inter.editReply({content: emojis.warning+' Invalid Key', ephemeral: true})
       
       let oldLimit = doc.verifiedRole
       doc.verifiedRole = role.role.id
