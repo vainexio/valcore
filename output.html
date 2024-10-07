@@ -4,121 +4,115 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Server Backup</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
-   body {
+    body {
       margin: 0;
       padding: 0;
-      background-color: #202225; /* Darker background */
-      color: #b9bbbe; /* Lighter text color */
-      font-family: Arial, sans-serif;
-      position: relative;
-      min-height: 100vh;
-    }
-
-    .title-container {
+      background: linear-gradient(135deg, #2c2f33, #23272a); /* Cool background gradient */
+      font-family: 'Roboto', sans-serif;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: calc(100vh - 50px); /* Adjusted for footer height */
+      height: 100vh;
+      overflow: hidden;
     }
 
-    .icon-and-title {
-      display: flex;
-      align-items: center;
-    }
-
-    .icon img {
-      width: 40px; /* Adjust size of icon */
-      height: 40px; /* Adjust size of icon */
-      margin-right: 15px; /* Space between icon and text */
-    }
-
-    .text-container {
+    .card {
+      background-color: #2f3136; /* Dark card background */
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Subtle shadow for popup effect */
       text-align: center;
+      max-width: 400px;
+      width: 100%;
+      animation: popUp 0.6s ease-out;
     }
 
     .title {
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 10px;
-      color: #ffffff; /* White title color */
-      animation: slideIn 1s forwards; /* Animation for title */
+      font-size: 28px;
+      font-weight: 700;
+      color: ${titleColor}; /* Title color from variable */
+      margin-bottom: 15px;
     }
 
     .subtext {
       font-size: 22px;
-      margin-bottom: 5px;
-      color: ${subtextColor}; /* Discord accent color for subtext */
+      color: ${subtextColor}; /* Subtext color from variable */
+      margin-bottom: 10px;
     }
 
     .subtext2 {
-      font-size: 20px;
-      color: #99aab5; /* Lighter color for subtext2 */
+      font-size: 18px;
+      color: ${subtext2Color}; /* Subtext2 color from variable */
+      margin-bottom: 20px;
     }
 
-    .copyright-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px; /* Fixed margin at the bottom */
-    }
-    
     .footer {
-      font-size: 12px; /* Fixed font size */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
+      color: #99aab5;
+      opacity: 0.7;
+    }
+
+    .footer img {
+      width: 25px;
+      height: 25px;
+      margin-right: 8px;
     }
 
     /* Animations */
-    @keyframes pulse {
+    @keyframes popUp {
       0% {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+      100% {
         transform: scale(1);
-      }
-      100% {
-        transform: scale(1.1);
-      }
-    }
-
-    @keyframes slideIn {
-      0% {
-        opacity: 0;
-        transform: translateY(-50px);
-      }
-      100% {
         opacity: 1;
-        transform: translateY(0);
       }
     }
 
-    @keyframes fadeIn {
+    /* Cool animated background */
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: radial-gradient(circle, #7289da 0%, transparent 50%), radial-gradient(circle, #43b581 10%, transparent 60%);
+      background-size: 300px 300px;
+      background-position: 100px 200px, 250px 500px;
+      animation: moveBackground 10s linear infinite;
+    }
+
+    @keyframes moveBackground {
       0% {
-        opacity: 0;
+        background-position: 100px 200px, 250px 500px;
       }
       100% {
-        opacity: 0.5;
+        background-position: 200px 300px, 350px 600px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="background"></div> <!-- Add this div for background image -->
-  <div class="title-container">
-    <div class="icon-and-title">
-      <div class="text-container">
-        <div class="title">${pageTitle}</div>
-        <div class="subtext">${subtext}</div>
-        <div class="subtext2">${subtext2}</div>
-      </div>
-    </div>
+  <div class="background"></div> <!-- Cool animated background -->
+
+  <div class="card"> <!-- Card container for the popup design -->
+    <div class="title">${pageTitle}</div>
+    <div class="subtext">${subtext}</div>
+    <div class="subtext2">${subtext2}</div>
   </div>
 
-  <div class="copyright-container">
-    <div class="icon">
-      <img src="https://logo.com/image-cdn/images/kts928pd/production/5b24e49fd89287ff1eb5bbc4cf93cb038c3384ef-512x512.png?w=1080&q=72" alt="Icon">
-    </div>
-    <div class="footer">
-      &copy; Developer: vainexio
-    </div>
+  <div class="footer">
+    <img src="https://logo.com/image-cdn/images/kts928pd/production/5b24e49fd89287ff1eb5bbc4cf93cb038c3384ef-512x512.png?w=1080&q=72" alt="Icon">
+    &copy; Developer: vainexio
   </div>
+
   <script>
     // Automatically scroll down to the bottom of the page
     window.onload = function() {
