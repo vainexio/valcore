@@ -1247,11 +1247,11 @@ function respond(res, data) {
   const htmlTemplate = fs.readFileSync('output.html', 'utf8');
 
   const modifiedHtml = htmlTemplate
-  .replace('${pageTitle}', data.guild?.name ? data.guild.name.toUpperCase() : 'ERROR')
-  .replace('${imageUrl}', data.guild && data.guild?.iconURL() ? data.guild.iconURL() : 'https://images-ext-1.discordapp.net/external/4vOerAC0lF1iBFoyvX6e_YBijSjc92mdFZEaTABBi0w/%3Fsize%3D1024/https/cdn.discordapp.com/avatars/1108412309308719197/f2c803df2c33edb9faffe59eeaf25827.png?format=webp&width=671&height=671')
-  .replace('${subtext}',data.text.toUpperCase())
-  .replace('${subtextColor}', data.color)
-  .replace('${subtext2}',data.text2 ? data.text2.toUpperCase() : '')
+  .replace(/\$\{pageTitle\}/g, data.guild?.name ? data.guild.name.toUpperCase() : 'ERROR')
+  .replace(/\$\{imageUrl\}/g, data.guild && data.guild.iconURL() ? data.guild.iconURL() : 'https://images-ext-1.discordapp.net/external/4vOerAC0lF1iBFoyvX6e_YBijSjc92mdFZEaTABBi0w/%3Fsize%3D1024/https/cdn.discordapp.com/avatars/1108412309308719197/f2c803df2c33edb9faffe59eeaf25827.png?format=webp&width=671&height=671')
+  .replace(/\$\{subtext\}/g, data.text.toUpperCase())
+  .replace(/\$\{subtextColor\}/g, data.color)
+  .replace(/\$\{subtext2\}/g, data.text2 ? data.text2.toUpperCase() : '');
   
   res.send(modifiedHtml);
 }
