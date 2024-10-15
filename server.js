@@ -1067,7 +1067,9 @@ client.on('interactionCreate', async inter => {
           msgSize = messages.size
           let more = []
           await messages.forEach(async (gotMsg) => {
-            more.push(gotMsg)
+            if (gotMsg.id === '1275500134641303662' && gotMsg.embeds[0]) {
+              more.push(gotMsg)
+            }
           })
           
           for (let i in more) {
@@ -1085,7 +1087,8 @@ client.on('interactionCreate', async inter => {
             for (let i in attachments) { files.push(attachments[i].url) }
             //let webhook = new WebhookClient({ url: 'https://discord.com/api/webhooks/1261656448493162566/MSbF2G1MLfOP4v5M6TPXtaMlWrI8T7c0Z3yW_TEXwzD1HPih9BwNBbpod4bk5DRgrY_V'})
             //try { await webhook.send({embeds: gotMsg.embeds, files: files, username: gotMsg.author.tag, avatarURL: gotMsg.author.avatarURL(),}) } catch(err) {}
-            try { await newVouch.send({content: tempMsg.content.replace('{user}',gotMsg.author.toString()).replace('{message}',gotMsg.content), files: files}) } catch (err) {}
+            try { await newVouch.send({embeds: gotMsg.embeds}) } catch (err) {}
+            //try { await newVouch.send({content: tempMsg.content.replace('{user}',gotMsg.author.toString()).replace('{message}',gotMsg.content), files: files}) } catch (err) {}
             data.completed++
           }
         });
