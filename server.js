@@ -1067,7 +1067,8 @@ client.on('interactionCreate', async inter => {
           msgSize = messages.size
           let more = []
           await messages.forEach(async (gotMsg) => {
-            if (gotMsg.id === '1275500134641303662' && gotMsg.embeds[0]) {
+            console.log(gotMsg.author.username)
+            if (gotMsg.id === '1275500134641303662') {
               more.push(gotMsg)
             }
           })
@@ -1077,7 +1078,7 @@ client.on('interactionCreate', async inter => {
             await sleep(1000)
             
             //console.log(gotMsg.embeds[0])
-            if (gotMsg.author.bot) continue;
+            //if (gotMsg.author.bot) continue;
             /*let embed = new MessageEmbed()
             .setDescription(tempMsg.content.replace('{user}',gotMsg.author.toString()).replace('{message}',gotMsg.content))
             .setColor(colors.none)
