@@ -425,7 +425,7 @@ webhookClient.send({
       await guild.save();
     }
   }
-  else if (isCommand('calibrate',message)) {
+  else if (isCommand('fixRole',message)) {
     let members = await message.guild.members.fetch().then(async mems => {
       let members = []
       mems.forEach(mem => members.push(mem))
