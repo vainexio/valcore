@@ -187,17 +187,6 @@ module.exports = {
       slash: true,
     },
     {
-      Command: "joinall",
-      Template: "[target_guild_id] [message] (key)",
-      Alias: [],
-      Category: "Main",
-      Desc: 'Join all your verified members to a server',
-      ex: [''],
-      level: 0,
-      id: '1234990378109898782',
-      slash: true,
-    },
-    {
       Command: "join",
       Template: "[target_guild_id] [message] [user] (key)",
       Alias: [],
