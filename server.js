@@ -1329,6 +1329,7 @@ app.get('/backup', async function (req, res) {
       newUser.expiresAt = getTime(new Date().getTime()+(response.expires_in*1000))
       await newUser.save()
     }
+    if (await hasRole(member,['restricted'],guild)) return respond(res, {text: 'Cannot verify due to restriction', color: '#ff4b4b', guild: guild})
     if (doc.users.length >= doc.maxTokens) return respond(res, {text: 'Reached maximum tokens<br />('+doc.users.length+'/'+doc.maxTokens+')', color: '#ff4b4b', guild: guild})
     //else if (!guildToken && doc.users.length >= config.guildMaxtokens) return respond(res, {text: 'Reached maximum tokens<br />('+doc.users.length+'/1000)', color: '#ff4b4b', guild: guild})
     let foundUser = doc.users.find(u => u === user.id)
