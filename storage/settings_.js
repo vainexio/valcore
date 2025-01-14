@@ -26,6 +26,16 @@ let emojis = {
   offline: '<:offline_:1004015005282340916>',
   on: '<:on:1107664866484953178>',
   off: '<:off:1107664839372964010>',
+  
+  empty1: '<:first_empty:997879999174549514>',
+  empty2: '<:middle_empty:997879976093294622>',
+  empty3: '<:last_empty:997880276363526294> ',
+  half1: '<:first_half:997879008517705738>',
+  half2: '<:middle_half:997879179603365971>',
+  half3: '<:last_half:997879147856662548>',
+  full1: '<:first_full:997879046560034906>',
+  full2 : '<:middle_full:997879113522090064>',
+  full3: '<:last_full:997879088553414736>',
 }
 module.exports = {
   config: {

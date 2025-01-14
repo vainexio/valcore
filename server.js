@@ -824,7 +824,7 @@ client.on('interactionCreate', async inter => {
         //{ name: "Access Key", value: `\`\`\`yaml\n${doc.key.substr(0, doc.key.length - 20)}...\`\`\`` },
         { name: "Verified Role", value: doc.verifiedRole !== "Backup" ? `<@&${doc.verifiedRole}>` : `${doc.verifiedRole} *(default)*` }
       )
-    .setFooter({ text: doc.users.length+"/"+doc.maxTokens+" capacity" })
+    .setFooter({ text: getPercentageEmoji(doc.users.length,doc.maxTokens)+" "+doc.users.length+"/"+doc.maxTokens+" capacity" })
     .setTimestamp();
       let row = null
       let url = encodeURI('https://discord.com/oauth2/authorize?client_id='+client.user.id+'&response_type=code&redirect_uri='+process.env.live+'&scope=guilds.join+identify&state='+doc.id+'-'+config.version)
