@@ -140,7 +140,7 @@ module.exports = {
       "type": 1,
       "description": "Get backup status of a guild",
       "options": [
-        {
+        /*{
           "name": 'unverify_button',
           "description": 'Show unverify button',
           "type": 3,
@@ -155,7 +155,7 @@ module.exports = {
             },
           ],
           "required": false,
-        },
+        },*/
         {
           "name": 'guild_id',
           "description": 'Guild ID',
