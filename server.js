@@ -821,10 +821,11 @@ client.on('interactionCreate', async inter => {
       .addFields(
         //{ name: "Guild ID", value: '`'+doc.id+'`' },
         { name: "Verified Users", value: "```diff\n+ "+doc.users.length+"```", inline: true },
+        { name: "\u200b", value:  "\u200b", inline: true },
         { name: "Author", value: `<@${doc.author}>`, inline: true },
+        { name: "\u200b", value:  getPercentageEmoji(doc.users.length,doc.maxTokens)+"\n"+doc.users.length+"/"+doc.maxTokens+" members", inline: true },
         //{ name: "Access Key", value: `\`\`\`yaml\n${doc.key.substr(0, doc.key.length - 20)}...\`\`\`` },
-        { name: "Verified Role", value: doc.verifiedRole !== "Backup" ? `<@&${doc.verifiedRole}>` : `${doc.verifiedRole} *(default)*`, inline: true  },
-        { name: "\u200b", value:  getPercentageEmoji(doc.users.length,doc.maxTokens)+"\n"+doc.users.length+"/"+doc.maxTokens+" members", inline: true  }
+        { name: "Verified Role", value: doc.verifiedRole !== "Backup" ? `<@&${doc.verifiedRole}>` : `${doc.verifiedRole} *(default)*`, inline: true },
       )
       let row = null
       let url = encodeURI('https://discord.com/oauth2/authorize?client_id='+client.user.id+'&response_type=code&redirect_uri='+process.env.live+'&scope=guilds.join+identify&state='+doc.id+'-'+config.version)
