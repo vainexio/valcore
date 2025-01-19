@@ -821,12 +821,11 @@ client.on('interactionCreate', async inter => {
       .addFields(
         //{ name: "Guild ID", value: '`'+doc.id+'`' },
         { name: "Verified Users", value: "```diff\n+ "+doc.users.length+"```", inline: true },
-        { name: "\u200b", value:  "\u200b", inline: true },
         { name: "Author", value: `<@${doc.author}>`, inline: true },
-        { name: "\u200b", value:  getPercentageEmoji(doc.users.length,doc.maxTokens)+"\n"+doc.users.length+"/"+doc.maxTokens+" members", inline: true },
-        //{ name: "Access Key", value: `\`\`\`yaml\n${doc.key.substr(0, doc.key.length - 20)}...\`\`\`` },
         { name: "Verified Role", value: doc.verifiedRole !== "Backup" ? `<@&${doc.verifiedRole}>` : `${doc.verifiedRole} *(default)*`, inline: true },
+        { name: "Access Key", value: `\`\`\`yaml\n${doc.key.substr(0, doc.key.length - 20)}...\`\`\`` },
       )
+      .setFooter({text: doc.users.length+"/"+doc.maxTokens+" verified members"})
       let row = null
       let url = encodeURI('https://discord.com/oauth2/authorize?client_id='+client.user.id+'&response_type=code&redirect_uri='+process.env.live+'&scope=guilds.join+identify&state='+doc.id+'-'+config.version)
       if (unverify_button?.value === 'hide') {
@@ -1178,7 +1177,7 @@ process.on('unhandledRejection', async error => {
   channel ? channel.send({embeds: [embed]}).catch(error => error) : null
 });
 
-//Fetch tokens
+/*//Fetch tokens
 async function handleTokens() {
   let tokens = await tokenModel.find()
   let data = {
@@ -1244,11 +1243,7 @@ async function handleTokens() {
     let logs = await getChannel("1116922703597817888")
     logs.send(emojis.warning+' Unexpected error occurred while trying to refresh tokens\n```diff\n- '+err+'```')
   }
-}
-//Loop
-const interval = setInterval(async function() {
-  //await handleTokens()
-},21600000) //
+}*/
 
 function respond(res, data) {
   const htmlTemplate = fs.readFileSync('output.html', 'utf8');
