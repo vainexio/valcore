@@ -661,7 +661,7 @@ client.on('interactionCreate', async inter => {
       
       let ch = await getChannel(config.channels.templates)
       let foundMsg = await ch.messages.fetch('1261206750422503434')
-                
+      
       for (let i in doc.users) {
         let userId = doc.users[i]
         try {
