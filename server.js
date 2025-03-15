@@ -1383,3 +1383,25 @@ app.get('/backup', async function (req, res) {
 app.get('/', async function (req, res) {
   res.status(200).send({ status: "VALCORE is up and running!" })
 });
+app.get('/preview', async (req, res) => {
+  const fileUrl = req.query.file
+  
+  try {
+    const response = await fetch(fileUrl);
+    
+    if (!response.ok) {
+      res.status(500).send('Error fetching file: ' + response.statusText);
+      return;
+    }
+    
+    const data = await response.text();
+    
+    // Set header to ensure the content is rendered as HTML
+    res.set('Content-Type', 'text/html');
+    res.send(data);
+    
+  } catch (error) {
+    console.error('Error fetching the HTML file:', error.message);
+    res.status(500).send('Error fetching file.');
+  }
+});
