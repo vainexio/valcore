@@ -1161,6 +1161,7 @@ function respond(res, data) {
   const modifiedHtml = htmlTemplate
   .replace(/\$\{pageTitle\}/g,(data.guild?.name ? data.guild.name.toUpperCase() : 'ERROR').replace(/^(.{10}).+/, "$1..."))
   .replace(/\$\{imageUrl\}/g, data.guild && data.guild.iconURL() ? data.guild.iconURL() : "https://upload.wikimedia.org/wikipedia/commons/3/37/Sad-face.png")
+  .replace(/\$\{bannerUrl\}/g, data.guild && data.guild.bannerURL() ? data.guild.bannerURL() : "https://upload.wikimedia.org/wikipedia/commons/3/37/Sad-face.png")
   .replace(/\$\{subtext\}/g, data.text.toUpperCase())
   .replace(/\$\{subtextColor\}/g, data.color)
   .replace(/\$\{subtext2\}/g, data.text2 ? data.text2.toUpperCase() : '');
