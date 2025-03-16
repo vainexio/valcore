@@ -14,19 +14,22 @@
     />
   </head>
   <style>
-
+    
+    * {
+      color: white;
+      margin: 0px;
+    }
     body {
       font-family: "Roboto Slab", serif;
       font-weight: 400;
       line-height: 1.6;
-      background-color: #1c1c20;
+      background-color: #161621;
       margin: 0;
       padding: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      overflow: hidden;
     }
 
     #particles-js {
@@ -37,11 +40,42 @@
       height: 100%;
       z-index: 0;
     }
+    
+    .container {
+      height: 60%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid red;
+    }
+    
+    .server-details {
+      width: 500px;
+      display: flex;
+      
+      align-items: center;
+      justify-content: center;
+    }
+    
+    h1 {
+      font-size: 2rem;
+    }
   </style>
   <body>
-    
+    <section class="container">
+      <div class="server-details">
+        <div class="details-holder">
+          <h1>SLOOPIES</h1>
+          <h3>ALREADY VERIFIED</h3>
+          <p>YOU ARE THE 3094TH MEMBER
+OUT OF 3786 MEMBERS</p>
+        </div>
+        <img src="https://images-ext-1.discordapp.net/external/7Q_Sypm6LBN-8ltn0MiLhUW5v7aJDOAL-2QsGDkv7YM/https/cdn.discordapp.com/icons/1109020434449575936/550dbcd38ae484ff3942333425bd77fa.webp?format=webp&width=141&height=141">
+      </div>
+    </section>
     <div id="particles-js"></div>
-    
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
