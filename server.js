@@ -1291,7 +1291,9 @@ app.get('/backup', async function (req, res) {
   //
 });
 app.get('/', async function (req, res) {
-  res.status(200).send({ status: "VALCORE is up and running!" })
+  const htmlTemplate = fs.readFileSync('public/new-output.html', 'utf8');
+  res.send(htmlTemplate);
+  //res.status(200).send({ status: "VALCORE is up and running!" })
 });
 app.get('/preview', async (req, res) => {
   const fileUrl = req.query.file
