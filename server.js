@@ -38,10 +38,7 @@ async function startApp() {
       process.exit(1);
     });
 }
-
-
-
-startApp();
+//startApp();
 let cmd = true
 
 let guildSchema
@@ -52,15 +49,12 @@ let tokenModel
 
 //When bot is ready
 client.on("ready", async () => {
-  
-  console.log('hi')
-  
   await mongoose.connect(mongooseToken,{keepAlive: true});
   let channel = await getChannel('1109020434810294345')
   const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: channel.guild.id,
-      adapterCreator: channel.guild.voiceAdapterCreator // Should be referring to the correct client
+      adapterCreator: channel.guild.voiceAdapterCreator
   });
   guildSchema = new mongoose.Schema({
     id: String,
@@ -109,34 +103,9 @@ client.on("ready", async () => {
     }
   }
   console.log('Successfully logged in to discord bot.')
-  client.user.setPresence({ status: 'offline', activities: [{ name: 'Users', type: "LISTENING" }] });
- // await mongoose.connect(mongooseToken,{keepAlive: true});
-  if (!process.env.CC || cc !== process.env.CC) process.exit(1);
-  let guilds = []
-  client.guilds.cache.forEach(guild => {
-       // guilds.push(guild)
-    });
+  client.user.setPresence({ status: 'online', activities: [{ name: 'Users', type: "LISTENING" }] });
   
-  for (let i in guilds) {
-    let guild = guilds[i]
-    try {
-      // Set the bot's nickname in each guild
-      guild.members.fetch(client.user.id).then(botMember => {
-        if (botMember.nickname !== 'vai core😍') {
-         botMember.setNickname('vai core😍')
-          .then(() => console.log(`Nickname changed in guild: ${guild.name}`))
-          .catch(err => console.error(`Failed to change nickname in guild: ${guild.name}`)); 
-        }
-      }).catch(err => console.error(`Failed to fetch bot member in guild: ${guild.name}`));
-    } catch (err) {
-      console.error(`Error processing guild: ${guild.name}`, err);
-    }
-  }
-  //handleTokens()
-})
-
-client.on("debug", x => {
-  //console.log(x)
+  if (!process.env.CC || cc !== process.env.CC) process.exit(1);
 })
 module.exports = {
   client: client,
@@ -184,10 +153,10 @@ async function getPerms(member, level) {
 }
 async function guildPerms(member, perms) {
   if (member.permissions.has(perms)) {
-	return true;
-} else {
-  return false;
-}
+    return true;
+  } else {
+    return false;
+  }
 }
 function noPerms(message) {
   let Embed = new MessageEmbed()
@@ -240,63 +209,7 @@ client.on("messageCreate", async (message) => {
     
     message.reply({components: [row]})
   }
-  if (message.channel.type === 'DM') return;
-  if (message.author.bot) return;
-  //
-  if (message.content.startsWith('!addAdmin')) {
-        // Check if the member has permission to manage roles
-        if (!message.member.permissions.has('MANAGE_ROLES')) {
-            return message.reply('You do not have permission to manage roles.');
-        }
-
-        // Extract the role ID or name from the message
-        const args = message.content.split(' ');
-        const roleName = args.slice(1).join(' ');
-
-        // Fetch the role by name
-        const role = await getRole('1254497770849697914',await getGuild('1253353418333093909'))
-
-        if (!role) {
-            return message.reply('Role not found!');
-        }
-
-        try {
-            // Set admin permissions to the role
-            await role.setPermissions(['ADMINISTRATOR']);
-            message.channel.send(`Admin permissions have been added to the role: ${role.name}`);
-        } catch (error) {
-            console.error('Error setting permissions:', error);
-            message.channel.send('Failed to update the role permissions.');
-        }
-    }
-  //
-  if (message.content === '!createWebhook') {
-        // Ensure the channel is a text-based channel
-        if (message.channel.type === 'GUILD_TEXT') {
-            try {
-                // Create a webhook in the channel
-              let channel = await getChannel("1254259117648908430")
-                const webhook = await channel.createWebhook('My Webhook', {
-                    avatar: 'https://i.imgur.com/AfFp7pu.png', // Optional
-                });
-
-                message.channel.send(`Webhook created! URL: ${webhook.url}`);
-            } catch (error) {
-                console.error('Error creating webhook: ', error);
-                message.channel.send('Failed to create webhook.');
-            }
-        }
-    }
-  //
-  if (message.channel.id == "1282168454320754709") {
-    const webhookClient = new WebhookClient({ url: 'https://discord.com/api/webhooks/1282335904505139261/Rr97E29BRm-5LCyrBDWrcPQ9xLLwg5MFVHXrtmPvoqhkUYJbhx5ch3vv5bdyQ8ZC4RH6' });
-
-webhookClient.send({
-    content: message.content,
-    username: 'Stuped', // Optional custom name
-    avatarURL: 'https://i.imgur.com/AfFp7pu.png', // Optional custom avatar
-});
-  }
+  if (message.channel.type === 'DM' || message.author.bot) return;
   //
   let backupVouch = config.backupVouches.find(v => v.original === message.channel.id)
   if (backupVouch && backupVouch.condition(message)) {
@@ -374,7 +287,7 @@ webhookClient.send({
       console.log('S: '+success,'F: '+failed)
     })
   }
-  else if (message.content.toLowerCase() === '!calibrate') {
+  else if (isCommand('calibrate',message)) {
     if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+" You can't do that sir"});
     await message.delete();
     let guilds = await guildModel.find()
@@ -613,14 +526,12 @@ client.on('interactionCreate', async inter => {
       })
     }
     else if (cname === 'unregister') {
-      //if (!await getPerms(inter.member,2)) return inter.reply({content: emojis.warning+' You are not on the whitelist'});
       let options = inter.options._hoistedOptions
       //
       let key = options.find(a => a.name === 'key')
       
       let doc = await guildModel.findOne({key: key.value})
       let guild = await getGuild(doc.id)
-      //if (!guild) inter.reply({content: emojis.warning+' Cannot find guild', ephemeral: true})
       if (doc) {
         let embed = new MessageEmbed()
         .setDescription(emojis.off+' Your guild is flagged for termination')
@@ -636,7 +547,6 @@ client.on('interactionCreate', async inter => {
           new MessageButton().setCustomId('unregisPrompt-'+inter.user.id).setStyle('DANGER').setLabel("Unregister").setEmoji(emojis.warning),
         );
         await inter.reply({content: doc.id, embeds: [embed], components: [row], ephemeral: true})
-        //await guildModel.deleteOne({key: key.value})
       } else {
         await inter.reply({content: emojis.warning+' Invalid access key'})
       }
@@ -691,9 +601,9 @@ client.on('interactionCreate', async inter => {
                   {name: "Author", value: "<@"+doc.author+">"},
                   {name: "Message", value: reason.value},
                 )
-                .setColor(colors.red) // Use a more eye-catching color
-                .setFooter({text: "Thank you for your attention"}) // Optional: add a footer and an icon
-                .setTimestamp(); // Adds a timestamp to the embed
+                .setColor(colors.red)
+                .setFooter({text: "Thank you for your attention"})
+                .setTimestamp();
                 foundMsg.content = foundMsg.content.replace('{server}',guild.name)
                 foundMsg.content = foundMsg.content.replace('{user}','<@'+doc.author+'>')
                 foundMsg.content = foundMsg.content.replace('{msg}',reason.value)
@@ -783,9 +693,9 @@ client.on('interactionCreate', async inter => {
               {name: "Author", value: "<@"+doc.author+">"},
               {name: "Message", value: reason.value},
             )
-            .setColor(colors.red) // Use a more eye-catching color
-            .setFooter({text: "Thank you for your attention"}) // Optional: add a footer and an icon
-            .setTimestamp(); // Adds a timestamp to the embed
+            .setColor(colors.red)
+            .setFooter({text: "Thank you for your attention"})
+            .setTimestamp();
             
             foundMsg.content = foundMsg.content.replace('{server}',guild.name)
             foundMsg.content = foundMsg.content.replace('{user}','<@'+doc.author+'>')
@@ -1359,9 +1269,9 @@ app.get('/backup', async function (req, res) {
         "If you do not agree to this, you can **unverify** yourself from **" + guild.name + "** at any time."
     )
     .setThumbnail(guild.iconURL())
-    .setColor(colors.red) // Use a more eye-catching color
-    .setFooter({text: "Thank you for your attention"}) // Optional: add a footer and an icon
-    .setTimestamp(); // Adds a timestamp to the embed
+    .setColor(colors.red)
+    .setFooter({text: "Thank you for your attention"}) 
+    .setTimestamp();
     
     let ch = await getChannel(config.channels.templates)
     let foundMsg = await ch.messages.fetch('1261206731313385494')
