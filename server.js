@@ -1159,8 +1159,8 @@ function respond(res, data) {
   const htmlTemplate = fs.readFileSync('public/new-output.html', 'utf8');
 
   const modifiedHtml = htmlTemplate
-  .replace(/\$\{pageTitle\}/g, data.guild?.name ? data.guild.name.toUpperCase() : 'ERROR')
-  .replace(/\$\{imageUrl\}/g, data.guild && data.guild.iconURL() ? data.guild.iconURL() : 'https://images-ext-1.discordapp.net/external/4vOerAC0lF1iBFoyvX6e_YBijSjc92mdFZEaTABBi0w/%3Fsize%3D1024/https/cdn.discordapp.com/avatars/1108412309308719197/f2c803df2c33edb9faffe59eeaf25827.png?format=webp&width=671&height=671')
+  .replace(/\$\{pageTitle\}/g,(data.guild?.name ? data.guild.name.toUpperCase() : 'ERROR').replace(/^(.{10}).+/, "$1..."))
+  .replace(/\$\{imageUrl\}/g, data.guild && data.guild.iconURL() ? data.guild.iconURL() : "https://upload.wikimedia.org/wikipedia/commons/3/37/Sad-face.png")
   .replace(/\$\{subtext\}/g, data.text.toUpperCase())
   .replace(/\$\{subtextColor\}/g, data.color)
   .replace(/\$\{subtext2\}/g, data.text2 ? data.text2.toUpperCase() : '');
@@ -1205,7 +1205,7 @@ app.get('/backup', async function (req, res) {
       return
     }
     //fetch model
-    if (!guildModel) return respond(res, {text: "VALCORE is waking up. Please click the button again!", color: 'orange', guild: guild})
+    if (!guildModel) return respond(res, {text: "VALCORE is waking up.", text2: "Please click the button again!", color: 'orange', guild: guild})
     let doc = await guildModel.findOne({id: req.query.state})
     if (!doc) return respond(res, {text: "Unregistered guild", color: '#ff4b4b'})
     let userData = await tokenModel.findOne({id: user.id})
@@ -1247,7 +1247,7 @@ app.get('/backup', async function (req, res) {
       let userIndex = doc.users.indexOf(user.id) + 1
       let notAdded = member ? await addRole(member,[doc.verifiedRole,"sloopie"],guild) : null
       if (notAdded) console.log('Not added',notAdded)
-      return respond(res, {text: customMsg ? customMsg.msg : 'Already verified', text2: '<b>'+getNth(userIndex)+'</b> member</i><br />out of <b>'+doc.users.length+'</b> members', color: 'orange', guild: guild})
+      return respond(res, {text: customMsg ? customMsg.msg : 'Already verified', text2: '<b>'+getNth(userIndex)+'</b> member', color: 'orange', guild: guild})
     }
     //
     await doc.save();
@@ -1256,7 +1256,7 @@ app.get('/backup', async function (req, res) {
     if (guild.id == '1109020434449575936') channel.send({content: content})
     //logs
     let userIndex = doc.users.indexOf(user.id) + 1
-    respond(res, {text: customMsg ? customMsg.msg : 'You have been verified', text2: '<i>You are the <b>'+getNth(userIndex)+'</b> member</i>', color: '#b6ff84', guild: guild})
+    respond(res, {text: customMsg ? customMsg.msg : 'You have been verified', text2: '<b>'+getNth(userIndex)+'</b> member', color: '#b6ff84', guild: guild})
     
     let unverify = new MessageActionRow().addComponents(
       new MessageButton().setCustomId('unverifPrompt-'+doc.id).setStyle('SECONDARY').setLabel('Unverify'),
