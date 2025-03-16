@@ -200,7 +200,7 @@ const lastMessages = new Map();
 const spamThreshold = 8;
 const cooldown = 10000;
 
-client.on("messageCreate", async (message) => {
+/*client.on("messageCreate", async (message) => {
   if (message.content.toLowerCase() === '!invite') {
     console.log('received hehe')
     let row = new MessageActionRow().addComponents(
@@ -408,7 +408,7 @@ client.on("messageCreate", async (message) => {
     }
     await message.reply(content+'\n\n📄 = in server\n✅ = has @comms role\n❌ = neither')
   }
-});//END MESSAGE CREATE
+});//END MESSAGE CREATE*/
 client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
@@ -1292,29 +1292,5 @@ app.get('/backup', async function (req, res) {
   //
 });
 app.get('/', async function (req, res) {
-  const htmlTemplate = fs.readFileSync('public/new-output.html', 'utf8');
-  res.send(htmlTemplate);
-  //res.status(200).send({ status: "VALCORE is up and running!" })
-});
-app.get('/preview', async (req, res) => {
-  const fileUrl = req.query.file
-  
-  try {
-    const response = await fetch(fileUrl);
-    
-    if (!response.ok) {
-      res.status(500).send('Error fetching file: ' + response.statusText);
-      return;
-    }
-    
-    const data = await response.text();
-    
-    // Set header to ensure the content is rendered as HTML
-    res.set('Content-Type', 'text/html');
-    res.send(data);
-    
-  } catch (error) {
-    console.error('Error fetching the HTML file:', error.message);
-    res.status(500).send('Error fetching file.');
-  }
+  res.status(200).send({ status: "VALCORE is up and running!" })
 });
