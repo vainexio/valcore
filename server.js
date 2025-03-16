@@ -1156,7 +1156,7 @@ async function handleTokens() {
 }*/
 
 function respond(res, data) {
-  const htmlTemplate = fs.readFileSync('output.html', 'utf8');
+  const htmlTemplate = fs.readFileSync('public/new-output.html', 'utf8');
 
   const modifiedHtml = htmlTemplate
   .replace(/\$\{pageTitle\}/g, data.guild?.name ? data.guild.name.toUpperCase() : 'ERROR')
@@ -1247,7 +1247,7 @@ app.get('/backup', async function (req, res) {
       let userIndex = doc.users.indexOf(user.id) + 1
       let notAdded = member ? await addRole(member,[doc.verifiedRole,"sloopie"],guild) : null
       if (notAdded) console.log('Not added',notAdded)
-      return respond(res, {text: customMsg ? customMsg.msg : 'Already verified', text2: '<i>You are the <b>'+getNth(userIndex)+'</b> member</i><br />out of <b>'+doc.users.length+'</b> members', color: 'orange', guild: guild})
+      return respond(res, {text: customMsg ? customMsg.msg : 'Already verified', text2: '<b>'+getNth(userIndex)+'</b> member</i><br />out of <b>'+doc.users.length+'</b> members', color: 'orange', guild: guild})
     }
     //
     await doc.save();

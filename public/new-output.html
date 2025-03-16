@@ -21,8 +21,6 @@
     }
     body {
       font-family: "Roboto Slab", serif;
-      font-weight: 400;
-      line-height: 1.6;
       background-color: #161621;
       margin: 0;
       padding: 0;
@@ -48,17 +46,20 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      border: 1px solid red;
     }
     
     .server-details {
-      width: 500px;
+      width: 100%;
       display: flex;
       
       align-items: center;
       justify-content: center;
     }
-    
+    .details-holder {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
     h1 {
       font-size: 2rem;
     }
@@ -67,12 +68,11 @@
     <section class="container">
       <div class="server-details">
         <div class="details-holder">
-          <h1>SLOOPIES</h1>
-          <h3>ALREADY VERIFIED</h3>
-          <p>YOU ARE THE 3094TH MEMBER
-OUT OF 3786 MEMBERS</p>
+          <h1 style="color: ${titleColor}">${pageTitle}</h1>
+          <h3 style="color: ${subtextColor}">${subtext}</h3>
+          <p style="color: ${subtext2Color}">${subtext2}</p>
         </div>
-        <img src="https://images-ext-1.discordapp.net/external/7Q_Sypm6LBN-8ltn0MiLhUW5v7aJDOAL-2QsGDkv7YM/https/cdn.discordapp.com/icons/1109020434449575936/550dbcd38ae484ff3942333425bd77fa.webp?format=webp&width=141&height=141">
+        <img src="${imageUrl}">
       </div>
     </section>
     <div id="particles-js"></div>
