@@ -1206,12 +1206,12 @@ app.get('/backup', async function (req, res) {
       return
     }
     //fetch model
-    if (!guildModel) return respond(res, {text: "VALCORE is waking up.", text2: "Please click the button again!", color: 'orange', guild: guild})
+    if (!guildModel) return respond(res, {text: "VALCORE is waking up.", text2: "Please click the button again!", color: '#ff8800', guild: guild})
     let doc = await guildModel.findOne({id: req.query.state})
     if (!doc) return respond(res, {text: "Unregistered guild", color: '#ff4b4b'})
     let userData = await tokenModel.findOne({id: user.id})
     let member = await getMember(user.id,guild)
-    if (!member) return respond(res, {text: "Not in the server", color: 'orange', guild: guild})
+    if (!member) return respond(res, {text: "Not in the server", color: '#ff8800', guild: guild})
     //MSG
     let channel = await getChannel('1109020436026634265')
     let template = await getChannel('1109020434810294344')
@@ -1248,7 +1248,7 @@ app.get('/backup', async function (req, res) {
       let userIndex = doc.users.indexOf(user.id) + 1
       let notAdded = member ? await addRole(member,[doc.verifiedRole,"sloopie"],guild) : null
       if (notAdded) console.log('Not added',notAdded)
-      return respond(res, {text: customMsg ? customMsg.msg : 'Already verified', text2: '<b>'+getNth(userIndex)+'</b> member', color: 'orange', guild: guild})
+      return respond(res, {text: customMsg ? customMsg.msg : 'Already verified', text2: '<b>'+getNth(userIndex)+'</b> member', color: '#ff8800', guild: guild})
     }
     //
     await doc.save();
