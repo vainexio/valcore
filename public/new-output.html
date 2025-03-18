@@ -23,7 +23,9 @@
       background-color: #191921;
       background: url("${bannerUrl}") rgba(0, 0, 0, 0.85);
       background-size: cover;
+      background-repeat: no-repeat;
       background-blend-mode: multiply;
+      background-position: center;
       margin: 0;
       padding: 0;
       display: flex;
@@ -40,7 +42,6 @@
       height: 100%;
       z-index: 0;
     }
-
     .container {
       height: 100vh;
       width: 100%;
@@ -56,7 +57,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      
+
       border-radius: 32px;
       border: 2px solid white;
     }
@@ -92,22 +93,26 @@
       margin-bottom: 15px;
       z-index: 1;
     }
-    }
     @media (max-width: 768px) {
       body {
-        height: 85vh;
+        height: 100vh;
       }
       h1 {
         font-size: 20px;
       }
-
-    .footer {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      margin-bottom: 15px;
-      z-index: 1;
-    }
+      h3 {
+        font-size: 13px;
+      }
+      .container {
+        height: 85vh;
+      }
+      .footer {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-bottom: 15px;
+        z-index: 1;
+      }
     }
   </style>
   <body>
@@ -115,11 +120,11 @@
       <div class="server-details">
         <div class="details-card">
           <div class="details-holder">
-          <h1 style="color: ${titleColor}">${pageTitle}</h1>
-          <h3 style="color: ${subtextColor}">${subtext}</h3>
-          <p style="color: ${subtext2Color}">${subtext2}</p>
-        </div>
-        <img class="server-icon" src="${imageUrl}" />
+            <h1 style="color: ${titleColor}">${pageTitle}</h1>
+            <h3 style="color: ${subtextColor}">${subtext}</h3>
+            <p style="color: ${subtext2Color}">${subtext2}</p>
+          </div>
+          <img class="server-icon" src="${imageUrl}" />
         </div>
       </div>
 
