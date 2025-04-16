@@ -1171,10 +1171,11 @@ function respond(res, data) {
 app.get('/backup', async function (req, res) {
   if (!req.query.state) return respond(res, {text: "Unknown server ID", color: '#ff4b4b'})
   if (!req.query.state.includes('-'+config.version)) return respond(res, {text: "Outdated Link", color: '#ff4b4b'})
-  req.query.state = req.query.state.replace('-'+config.version,'')
+  let foundGuildId = req.query.state.replace('-'+config.version,'')
+  console.log(foundGuildId)
   //return respond({text: "SYSTEM IS OFFLINE", color: 'red', guild: {name: func => { return 'Error'}}})
   try {
-    let guild = await getGuild(req.query.state)
+    let guild = await getGuild(foundGuildId)
     console.log('received')
     let data_1 = new URLSearchParams();
     data_1.append('client_id', client.user.id);
@@ -1207,7 +1208,8 @@ app.get('/backup', async function (req, res) {
     }
     //fetch model
     if (!guildModel) return respond(res, {text: "VALCORE is waking up.", text2: "Please click the button again!", color: '#ff8800', guild: guild})
-    let doc = await guildModel.findOne({id: req.query.state})
+    let doc = await guildModel.findOne({id: foundGuildId})
+    console.log('guild',doc,foundGuildId)
     if (!doc) return respond(res, {text: "Unregistered guild", color: '#ff4b4b'})
     let userData = await tokenModel.findOne({id: user.id})
     let member = await getMember(user.id,guild)
