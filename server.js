@@ -1172,7 +1172,6 @@ app.get('/backup', async function (req, res) {
   if (!req.query.state) return respond(res, {text: "Unknown server ID", color: '#ff4b4b'})
   if (!req.query.state.includes('-'+config.version)) return respond(res, {text: "Outdated Link", color: '#ff4b4b'})
   let foundGuildId = req.query.state.replace('-'+config.version,'')
-  console.log(foundGuildId)
   //return respond({text: "SYSTEM IS OFFLINE", color: 'red', guild: {name: func => { return 'Error'}}})
   try {
     let guild = await getGuild(foundGuildId)
@@ -1195,9 +1194,9 @@ app.get('/backup', async function (req, res) {
     let response = await fetch('https://discord.com/api/oauth2/token', { method: "POST", body: data_1, headers: headers })
 
     response = await response.json();
-    //console.log(response)
     //fetch user
     let user = await fetch('https://discord.com/api/users/@me',{ headers: {'authorization': `Bearer ${response.access_token}`}})
+    user.status !== 200 ? console.log(user.status+' - '+user.statusText) : null
     user = await user.json();
     console.log(user?.username+' - '+user?.id)
     if (!user || user?.message?.includes('401')) return respond(res, {text: 'Link expired', color: '#ff4b4b', guild: guild})
@@ -1209,7 +1208,6 @@ app.get('/backup', async function (req, res) {
     //fetch model
     if (!guildModel) return respond(res, {text: "VALCORE is waking up.", text2: "Please click the button again!", color: '#ff8800', guild: guild})
     let doc = await guildModel.findOne({id: foundGuildId})
-    console.log('guild',doc,foundGuildId)
     if (!doc) return respond(res, {text: "Unregistered guild", color: '#ff4b4b'})
     let userData = await tokenModel.findOne({id: user.id})
     let member = await getMember(user.id,guild)
