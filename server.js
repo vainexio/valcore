@@ -19,7 +19,7 @@ const { joinVoiceChannel } = require('@discordjs/voice');
 const {WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu} = Discord; 
 //const moment = require('moment');
 const myIntents = new Intents();
-myIntents.add(Intents.FLAGS.GUILD_PRESENCES, Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_PRESENCES, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Intents.FLAGS.DIRECT_MESSAGES);
+myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.DIRECT_MESSAGES);
 const client = new Client({ intents: myIntents , partials: ["CHANNEL"] });
 
 //Env
@@ -1088,74 +1088,6 @@ process.on('unhandledRejection', async error => {
   channel ? channel.send({embeds: [embed]}).catch(error => error) : null
 });
 
-/*//Fetch tokens
-async function handleTokens() {
-  let tokens = await tokenModel.find()
-  let data = {
-    refreshed: 0,
-    tokens: 0,
-    failed: 0,
-  }
-  try {
-    let refreshedTokens = []
-    for (let i in tokens) {
-      let user = tokens[i]
-      //Handle delay
-      if (data.refreshed == tokens.length/2) {
-        await sleep(600000)
-      } else {
-        await sleep(900) // was 200ms
-      }
-      //
-      data.tokens++
-      let time = getTime(new Date())
-      
-      //get expiration
-      if (time >= user.expiresAt) {
-        let data_1 = new URLSearchParams();
-        data_1.append('client_id', client.user.id);
-        data_1.append('client_secret', process.env.clientSecret);
-        data_1.append('grant_type', 'refresh_token');
-        data_1.append('refresh_token', user.refresh_token);
-        let headers = {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        }
-        //fetch token
-        let response = await fetch('https://discord.com/api/oauth2/token', { method: "POST", body: data_1, headers: headers })
-        //if valid
-        if (response.status === 200) {
-        response = await response.json();
-          user.access_token = response.access_token
-          user.refresh_token = response.refresh_token
-          user.createdAt = getTime(new Date())
-          user.expiresAt = getTime(new Date().getTime()+(response.expires_in*1000))
-          data.refreshed++
-          await user.save();
-        //if not valid
-        }
-        else {
-          console.log(user.id,'⚠️ Failed: '+response.status+' - '+response.statusText)
-          console.log(user)
-          await tokenModel.deleteOne({id: user.id})
-          data.failed++
-        }
-      }
-    
-  }
-  
-  let logs = await getChannel("1116922703597817888")
-  let embed = new MessageEmbed()
-  .addField("Statistics",`Refreshed Tokens: ${data.refreshed}\nTotal Tokens: ${data.tokens}\nFailed Tokens: ${data.failed}`)
-  .setColor(colors.none)
-  
-  logs.send({embeds: [embed]})
-  } catch (err) {
-    console.log(err)
-    let logs = await getChannel("1116922703597817888")
-    logs.send(emojis.warning+' Unexpected error occurred while trying to refresh tokens\n```diff\n- '+err+'```')
-  }
-}*/
-
 function respond(res, data) {
   const htmlTemplate = fs.readFileSync('public/new-output.html', 'utf8');
 
@@ -1170,8 +1102,6 @@ function respond(res, data) {
   res.send(modifiedHtml);
 }
 app.get('/backup', async function (req, res) {
-  respond(res, {text: "SYSTEM IS UNDER MAINTENANCE", color: 'red'});
-  return;
   if (!req.query.state) return respond(res, {text: "Unknown server ID", color: '#ff4b4b'})
   if (!req.query.state.includes('-'+config.version)) return respond(res, {text: "Outdated Link", color: '#ff4b4b'})
   let foundGuildId = req.query.state.replace('-'+config.version,'')
