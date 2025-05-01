@@ -72,7 +72,7 @@ module.exports = {
   //Get members
   getMember: async function (id, guild) {
   id = id ? id.replace(/<|@|>/g,'') : 0
-  let user = !isNaN(id) ? await guild.members.cache.get(id) : null
+  let user = !isNaN(id) ? await guild.members.fetch(id) : null
   return user;
 },
   //Get random

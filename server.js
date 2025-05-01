@@ -19,7 +19,7 @@ const { joinVoiceChannel } = require('@discordjs/voice');
 const {WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu} = Discord; 
 //const moment = require('moment');
 const myIntents = new Intents();
-myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.DIRECT_MESSAGES);
+myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.DIRECT_MESSAGES);
 const client = new Client({ intents: myIntents , partials: ["CHANNEL"] });
 
 //Env
@@ -50,14 +50,7 @@ let tokenModel
 //When bot is ready
 client.on("ready", async () => {
   console.log('Successfully logged in to discord bot.')
-  return;
   await mongoose.connect(mongooseToken,{keepAlive: true});
-  let channel = await getChannel('1109020434810294345')
-  const connection = joinVoiceChannel({
-      channelId: channel.id,
-      guildId: channel.guild.id,
-      adapterCreator: channel.guild.voiceAdapterCreator
-  });
   guildSchema = new mongoose.Schema({
     id: String,
     key: String,
