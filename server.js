@@ -1170,10 +1170,11 @@ function respond(res, data) {
   res.send(modifiedHtml);
 }
 app.get('/backup', async function (req, res) {
+  respond(res, {text: "SYSTEM IS UNDER MAINTENANCE", color: 'red'});
+  return;
   if (!req.query.state) return respond(res, {text: "Unknown server ID", color: '#ff4b4b'})
   if (!req.query.state.includes('-'+config.version)) return respond(res, {text: "Outdated Link", color: '#ff4b4b'})
   let foundGuildId = req.query.state.replace('-'+config.version,'')
-  //return respond({text: "SYSTEM IS OFFLINE", color: 'red', guild: {name: func => { return 'Error'}}})
   try {
     let guild = await getGuild(foundGuildId)
     console.log('received')
