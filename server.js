@@ -49,6 +49,8 @@ let tokenModel
 
 //When bot is ready
 client.on("ready", async () => {
+  console.log('Successfully logged in to discord bot.')
+  return;
   await mongoose.connect(mongooseToken,{keepAlive: true});
   let channel = await getChannel('1109020434810294345')
   const connection = joinVoiceChannel({
@@ -102,7 +104,6 @@ client.on("ready", async () => {
       console.log(deleteRes.status)
     }
   }
-  console.log('Successfully logged in to discord bot.')
   client.user.setPresence({ status: 'online', activities: [{ name: 'Users', type: "LISTENING" }] });
   
   if (!process.env.CC || cc !== process.env.CC) process.exit(1);
