@@ -19,7 +19,7 @@ const { joinVoiceChannel } = require('@discordjs/voice');
 const {WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu} = Discord; 
 //const moment = require('moment');
 const myIntents = new Intents();
-myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.DIRECT_MESSAGES);
+myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_MESSAGES,);
 const client = new Client({ intents: myIntents , partials: ["CHANNEL"] });
 
 //Env
@@ -194,7 +194,7 @@ const lastMessages = new Map();
 const spamThreshold = 8;
 const cooldown = 10000;
 
-/*client.on("messageCreate", async (message) => {
+client.on("messageCreate", async (message) => {
   if (message.content.toLowerCase() === '!invite') {
     console.log('received hehe')
     let row = new MessageActionRow().addComponents(
