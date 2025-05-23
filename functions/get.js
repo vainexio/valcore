@@ -71,10 +71,15 @@ module.exports = {
 },
   //Get members
   getMember: async function (id, guild) {
-  id = id ? id.replace(/<|@|>/g,'') : 0
-  let user = !isNaN(id) ? await guild.members.fetch(id) : null
-  return user;
-},
+  try {
+    id = id ? id.replace(/<|@|>/g, '') : '0';
+    if (isNaN(id)) return null;
+    const user = await guild.members.fetch(id);
+    return user;
+  } catch (err) {
+    return null;
+  }
+  },
   //Get random
   getRandom: function (min, max) {
   min = Math.ceil(min);

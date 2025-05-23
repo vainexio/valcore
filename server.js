@@ -569,6 +569,7 @@ client.on('interactionCreate', async inter => {
         let userId = doc.users[i]
         try {
           let user = await getUser(userId);
+          console.log(user.id)
           if (user) {
           let member = await getMember(user.id,guild)
           if (member) already++
@@ -577,7 +578,6 @@ client.on('interactionCreate', async inter => {
             if (data) {
               if (user) await guild.members.add(user,{accessToken: data.access_token})
                 .then(suc => {
-                console.log(suc)
                 success++
                 
                 let unverify = new MessageActionRow().addComponents(
@@ -591,7 +591,7 @@ client.on('interactionCreate', async inter => {
                   "Feel free to ignore this message if you think that this is appropriate. You can **unverify** yourself at any time."
                 )
                 .addFields(
-                  {name: "Author", value: "<@"+doc.author+">"},
+                  {name: "Author", value: "<@"+inter.user.id+">"},
                   {name: "Message", value: reason.value},
                 )
                 .setColor(colors.red)
@@ -606,12 +606,12 @@ client.on('interactionCreate', async inter => {
                 });
               })
                 .catch(err => {
-                toDelete.push(i)
-                console.log('Fetch failed '+userId)
+                //toDelete.push(i)
+                console.log('Fetch failed '+userId,"Fetch err: "+err)
                 failed++
               })
             } else {
-              toDelete.push(i)
+              //toDelete.push(i)
               console.log('No data failed '+userId)
               failed++
             }
@@ -623,8 +623,8 @@ client.on('interactionCreate', async inter => {
           failed++
         }
         } catch(err) {
-          toDelete.push(i)
-          await tokenModel.deleteOne({id: userId})
+          //toDelete.push(i)
+          //await tokenModel.deleteOne({id: userId})
           console.log('Code error: '+err)
           failed++
         }
