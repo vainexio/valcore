@@ -683,7 +683,7 @@ client.on('interactionCreate', async inter => {
               "Feel free to ignore this message if you think that this is appropriate. You can **unverify** yourself at any time."
             )
             .addFields(
-              {name: "Author", value: "<@"+doc.author+">"},
+              {name: "Author", value: "<@"+inter.user.id+">"},
               {name: "Message", value: reason.value},
             )
             .setColor(colors.red)
