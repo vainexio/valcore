@@ -561,9 +561,10 @@ client.on('interactionCreate', async inter => {
       let already = 0
       let errors = ""
       let toDelete = []
+      await inter.reply({content: emojis.loading+" Joining "+doc.users.length+" users to your new guild **("+guild.name+")**", ephemeral: true})
       const usersDataContent = `['${doc.users.join("', '")}'];`;
       await safeSend(inter.channel,"**Initial Report Data (Important)**\n\n"+usersDataContent)
-      return;
+      
       let ch = await getChannel(config.channels.templates)
       let foundMsg = await ch.messages.fetch('1261206750422503434')
       
@@ -645,6 +646,7 @@ client.on('interactionCreate', async inter => {
         doc.users.splice(index,1)
       }
       await inter.channel.send({content: emojis.check+' Success: '+success+'\n'+emojis.x+' Deauthorized: '+failed+'\n'+emojis.on+' Already in Server: '+already+'\n🔑 Total Tokens: '+doc.users.length, files: [errorsData]})
+      await safeSend(inter.channel,"**Errors Report**\n\n"+errorsData)
       await doc.save();
     }
     else if (cname === 'join') {

@@ -1,6 +1,6 @@
 const client = require('../server.js').client;
 const Discord = require('discord.js');
-const {Client, Intents, MessageEmbed, MessageActionRow, MessageButton} = Discord;
+const {MessageAttachment, Client, Intents, MessageEmbed, MessageActionRow, MessageButton} = Discord;
 
 module.exports = {
   safeSend: async function(channel,messageContent) {
