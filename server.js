@@ -559,6 +559,7 @@ client.on('interactionCreate', async inter => {
       let failed = 0
       let success = 0
       let already = 0
+      let errors = ""
       let toDelete = []
       await inter.reply({content: emojis.loading+" Joining "+doc.users.length+" users to your new guild **("+guild.name+")**", ephemeral: true})
       
@@ -606,12 +607,17 @@ client.on('interactionCreate', async inter => {
                 });
               })
                 .catch(err => {
-                //toDelete.push(i)
-                console.log('Fetch failed '+userId,"Fetch err: "+err)
-                failed++
+                if (err.toString().includes('Invalid OAuth2') || err.toString().includes('Unknown User')) {
+                  toDelete.push(i)
+                  failed++
+                } else {
+                  errors += "Fetch failed: "+userId+"\n"+err+"\n\n"
+                  //inter.channel.send({content: "Fetch failed: "+userId+"\n"+err})
+                }
               })
             } else {
-              //toDelete.push(i)
+              toDelete.push(i)
+              errors += 'No data failed '+userId+"\n\n"
               console.log('No data failed '+userId)
               failed++
             }
@@ -619,22 +625,27 @@ client.on('interactionCreate', async inter => {
         } else {
           toDelete.push(i)
           await tokenModel.deleteOne({id: userId})
+          errors += 'user not found '+userId+"\n\n"
           console.log('user not found '+userId)
           failed++
         }
         } catch(err) {
           //toDelete.push(i)
           //await tokenModel.deleteOne({id: userId})
-          console.log('Code error: '+err)
-          failed++
+          errors += 'Code error on '+userId+': '+err+"\n\n"
+          console.log(err)
         }
       }
+      
+      const content = `['${doc.users.join("', '")}'];`;
+      const usersData = fs.writeFileSync('users-data.txt', content, 'utf8');
+      const errorsData = fs.writeFileSync('errors-data.txt', errors, 'utf8');
       toDelete.sort((a, b) => b-a);
       for (let i in toDelete) {
         let index = toDelete[i]
         doc.users.splice(index,1)
       }
-      await inter.channel.send({content: emojis.check+' Success: '+success+'\n'+emojis.x+' Deauthorized: '+failed+'\n'+emojis.on+' Already in Server: '+already+'\n🔑 Total Tokens: '+doc.users.length})
+      await inter.channel.send({content: emojis.check+' Success: '+success+'\n'+emojis.x+' Deauthorized: '+failed+'\n'+emojis.on+' Already in Server: '+already+'\n🔑 Total Tokens: '+doc.users.length, files: [usersData]})
       await doc.save();
     }
     else if (cname === 'join') {
