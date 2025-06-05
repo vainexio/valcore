@@ -1,20 +1,6 @@
-No data failed 1264762170483146792
-
-Fetch failed: 470125087312314369
+Fetch failed: 1053284111025971281
 DiscordAPIError: The user is banned from this guild.
 
-No data failed 805081555298418688
-
-No data failed 1365373433294098473
-
-Fetch failed: 1370367381364412439
+Fetch failed: 831984274181062708
 DiscordAPIError: The user is banned from this guild.
-
-Fetch failed: 1364948171201056871
-DiscordAPIError: You are at the 100 server limit.
-
-Fetch failed: 1358002127653310474
-DiscordAPIError: The user account must first be verified
-
-No data failed 594507254707781642
 
