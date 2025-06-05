@@ -1,6 +1,36 @@
-Fetch failed: 1053284111025971281
-DiscordAPIError: The user is banned from this guild.
+Fetch failed: 1168552843335172217
+DiscordAPIError: You are at the 100 server limit.
 
-Fetch failed: 831984274181062708
-DiscordAPIError: The user is banned from this guild.
+Fetch failed: 754184925955096657
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 956733479754825828
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 1305550654986522674
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 827178564646076436
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 813732271986180097
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 1131173167260512307
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 1373928664336437293
+DiscordAPIError: The user account must first be verified
+
+Fetch failed: 1099984476915900496
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 846360125085843483
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 846360125085843483
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 790095196124872715
+DiscordAPIError: You are at the 100 server limit.
 
