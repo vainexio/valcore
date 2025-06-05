@@ -69,9 +69,6 @@ No data failed 741983041865646081
 Fetch failed: 1207934231406186520
 DiscordAPIError: You are at the 100 server limit.
 
-Fetch failed: 694937370163806371
-DiscordAPIError: You are at the 100 server limit.
-
 Fetch failed: 734393117226041395
 DiscordAPIError: You are at the 100 server limit.
 
@@ -113,9 +110,6 @@ DiscordAPIError: You are at the 100 server limit.
 No data failed 577540918219898890
 
 Fetch failed: 729253036056379432
-DiscordAPIError: You are at the 100 server limit.
-
-Fetch failed: 1001110055342592042
 DiscordAPIError: You are at the 100 server limit.
 
 No data failed 1153127943552385085
@@ -193,9 +187,6 @@ No data failed 1247539447873011715
 No data failed 976308724912250920
 
 No data failed 586920081456365569
-
-Fetch failed: 852518889576857650
-DiscordAPIError: You are at the 100 server limit.
 
 No data failed 890092959737970719
 
@@ -361,9 +352,6 @@ No data failed 751637318686736384
 Fetch failed: 1291368170426204233
 DiscordAPIError: You are at the 100 server limit.
 
-Fetch failed: 1245641456551727109
-DiscordAPIError: You are at the 100 server limit.
-
 No data failed 742727702905356429
 
 Fetch failed: 790169992972730398
@@ -491,9 +479,6 @@ DiscordAPIError: You are at the 100 server limit.
 Fetch failed: 1311263437510152261
 DiscordAPIError: You are at the 100 server limit.
 
-Fetch failed: 1329697521420865591
-DiscordAPIError: You are at the 100 server limit.
-
 No data failed 873604322670293083
 
 No data failed 829582227411173376
@@ -540,9 +525,6 @@ No data failed 1047138524958302208
 
 No data failed 673649232233627648
 
-Fetch failed: 1052523790309003324
-DiscordAPIError: You are at the 200 server limit.
-
 No data failed 1356541748804976756
 
 No data failed 1265902033991635034
@@ -561,9 +543,6 @@ DiscordAPIError: You are at the 100 server limit.
 No data failed 571674559892160530
 
 No data failed 1259806521055776800
-
-Fetch failed: 1345818378337652767
-DiscordAPIError: You are at the 200 server limit.
 
 Fetch failed: 754184925955096657
 DiscordAPIError: You are at the 100 server limit.
