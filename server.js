@@ -1126,7 +1126,6 @@ app.get('/backup', async function (req, res) {
       'Content-Type': 'application/x-www-form-urlencoded',
     }
     //fetch token
-    //
     let response = await fetch('https://discord.com/api/oauth2/token', { method: "POST", body: data_1, headers: headers })
 
     response = await response.json();
