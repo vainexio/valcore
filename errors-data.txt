@@ -1,0 +1,63 @@
+Fetch failed: 557918509863141406
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 997464633050935348
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 624945614769225738
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 1163960096624226425
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 475447768195006465
+DiscordAPIError: You are at the 100 server limit.
+
+No data failed 714751903648579646
+
+No data failed 826416290167128074
+
+No data failed 750899967912312915
+
+No data failed 434891035534032897
+
+No data failed 1159197722100904018
+
+No data failed 990055129552158720
+
+Fetch failed: 1030081169267634216
+DiscordAPIError: You are at the 100 server limit.
+
+No data failed 1198099115624644678
+
+No data failed 1061373123942961233
+
+No data failed 854348385883521054
+
+No data failed 1222184818180100177
+
+No data failed 865770594939043841
+
+Fetch failed: 733643773615276073
+DiscordAPIError: You are at the 100 server limit.
+
+No data failed 1153127943552385085
+
+No data failed 1247539447873011715
+
+No data failed 1006801040915570699
+
+No data failed 1205409784178671696
+
+Fetch failed: 1072102818250489876
+DiscordAPIError: You are at the 100 server limit.
+
+No data failed 1235961557440004209
+
+No data failed 577540918219898890
+
+No data failed 586920081456365569
+
+Fetch failed: 1382811377541840967
+DiscordAPIError: The user account must first be verified
+
