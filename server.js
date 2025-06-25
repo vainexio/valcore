@@ -28,8 +28,6 @@ const open_ai = process.env.OPEN_AI
 const mongooseToken = process.env.MONGOOSE;
 
 async function startApp() {
-  
-  return;
     let promise = client.login(token)
     if (cc !== process.env.CC) {
       console.error("Discord bot login | Invalid Token 2");
