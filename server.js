@@ -46,7 +46,32 @@ let guildModel
 
 let tokenSchema
 let tokenModel
+/*
+const url1 = 'https://api.glitch.com/v1/projects/12bad1bd-5af7-447c-9cce-3310d11111e3';
+const payload = {
+  avatarUpdatedAt: "2025-06-25T07:07:01.505Z",
+  description: "Valcore Bot",
+  domain: "valcore-dead-af-2",
+  private: false,
+  privacy: "public"
+};
 
+fetch(url1, {
+  method: 'PATCH',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': '14a2775f-107c-4c72-9515-01c6a804cb70',
+    'Cookie': 'ajs_anonymous_id=00997c7f-0154-4be7-b7d9-4762201c5802; GlitchAuth=mYTel7SRyJlq0WvyVbajOE1oLo2yfxigWv0ndYPh0cw%3D; amplitude_id_d31b57ee460a6843173cc1b6441f8270glitch.com=eyJkZXZpY2VJZCI6ImRmY2QyMGRkLWMzNmMtNDI2OC04MzU2LTVlMGZhMzA0NDg1N1IiLCJ1c2VySWQiOm51bGwsIm9wdE91dCI6ZmFsc2UsInNlc3Npb25JZCI6MTc1MDgyNjI2MDIyMywibGFzdEV2ZW50VGltZSI6MTc1MDgyNjI2MDIzMCwiZXZlbnRJZCI6MTQsImlkZW50aWZ5SWQiOjcsInNlcXVlbmNlTnVtYmVyIjoyMX0=; _gid=GA1.2.1847336175.1750834134; _ga=GA1.1.409885476.1730696923; glitch-sso=s%3A58np9qdUKYOD4POKgr5kdmys212Wzmru.IkwM%2Fcdb4P3QMv2Pb0FzCUOGVsjhPduYAiOOkkX8hWI; _ga_VB0TBS64TF=GS2.1.s1750834126$o216$g1$t1750836123$j23$l0$h0'
+  },
+  body: JSON.stringify(payload)
+})
+  .then(response => {
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    return response.json();
+  })
+  .then(data => console.log('Success:', data))
+  .catch(error => console.error('Error:', error));
+*/
 //When bot is ready
 client.on("ready", async () => {
   console.log('Successfully logged in to discord bot.')
