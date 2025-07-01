@@ -11,6 +11,7 @@ const discordTranscripts = require('discord-html-transcripts');
 const wait = require('node:timers/promises').setTimeout;
 const cc = 'KJ0UUFNHWBJSE-WE4GFT-W4VG'
 const fs = require('fs-extra')
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 //
 //Discord
@@ -38,7 +39,7 @@ async function startApp() {
       process.exit(1);
     });
 }
-//startApp();
+startApp();
 let cmd = true
 
 let guildSchema
