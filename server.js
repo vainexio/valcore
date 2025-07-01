@@ -38,7 +38,7 @@ async function startApp() {
       process.exit(1);
     });
 }
-startApp();
+//startApp();
 let cmd = true
 
 let guildSchema
