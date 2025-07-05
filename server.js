@@ -428,6 +428,7 @@ client.on("messageCreate", async (message) => {
     await message.reply(content+'\n\n📄 = in server\n✅ = has @comms role\n❌ = neither')
   }
 });//END MESSAGE CREATE*/
+let joinDebounce = false
 client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
@@ -582,6 +583,11 @@ client.on('interactionCreate', async inter => {
       if (!doc) doc = await guildModel.findOne({author: inter.user.id})
       if (!doc) return inter.reply({content: emojis.warning+' Invalid key was provided', ephemeral: true})
       if (doc.users.length === 0) return inter.reply({content: emojis.warning+' No users have yet verified to your server', ephemeral: true})
+      
+      
+      if (joinDebounce) return inter.reply(emojis.warning+" Bot is currently busy with other `joinall` commands. Please try again later.")
+        joinDebounce = true
+      
       let failed = 0
       let success = 0
       let already = 0
@@ -593,7 +599,6 @@ client.on('interactionCreate', async inter => {
       
       let ch = await getChannel(config.channels.templates)
       let foundMsg = await ch.messages.fetch('1261206750422503434')
-      
       for (let i in doc.users) {
         let userId = doc.users[i]
         try {
@@ -671,6 +676,7 @@ client.on('interactionCreate', async inter => {
         let index = toDelete[i]
         doc.users.splice(index,1)
       }
+      joinDebounce = false
       await inter.channel.send({content: emojis.check+' Success: '+success+'\n'+emojis.x+' Deauthorized: '+failed+'\n'+emojis.on+' Already in Server: '+already+'\n🔑 Total Tokens: '+doc.users.length, files: [errorsData]})
       await safeSend(inter.channel,"**Errors Report**\n\n"+errorsData)
       await doc.save();
