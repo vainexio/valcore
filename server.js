@@ -599,6 +599,7 @@ client.on('interactionCreate', async inter => {
       
       let ch = await getChannel(config.channels.templates)
       let foundMsg = await ch.messages.fetch('1261206750422503434')
+      let msgContent = ''+foundMsg.content
       for (let i in doc.users) {
         let userId = doc.users[i]
         try {
@@ -631,11 +632,11 @@ client.on('interactionCreate', async inter => {
                 .setColor(colors.red)
                 .setFooter({text: "Thank you for your attention"})
                 .setTimestamp();
-                foundMsg.content = foundMsg.content.replace('{server}',guild.name)
-                foundMsg.content = foundMsg.content.replace('{user}','<@'+doc.author+'>')
-                foundMsg.content = foundMsg.content.replace('{msg}',reason.value)
+                msgContent = msgContent.replace('{server}',guild.name)
+                msgContent = msgContent.replace('{user}','<@'+doc.author+'>')
+                msgContent = msgContent.replace('{msg}',reason.value)
                 user.send({
-                  content: foundMsg.content,
+                  content: msgContent,
                   components: [unverify]
                 });
               })
