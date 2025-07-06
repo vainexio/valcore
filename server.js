@@ -464,7 +464,7 @@ client.on('interactionCreate', async inter => {
       if (doc) {
         doc.unverifyOnLeave = enabled.value
         await doc.save()
-        await inter.reply({content: emojis.check+" UnverifyOnLeave`"})
+        await inter.reply({content: "` Enabled ` : "+enabled.value.toString().toUpperCase()})
       } else {
         await inter.reply({content: emojis.warning+' Invalid access key'})
       }
@@ -661,7 +661,8 @@ client.on('interactionCreate', async inter => {
         if (!doc) doc = await guildModel.findOne({author: inter.user.id})
         if (!doc) return inter.reply({content: emojis.warning+' Invalid access key'})
         if (!guild) return inter.reply({content: emojis.warning+' Invalid guild ID', ephemeral: true})
-        
+        let user = doc.users.find(u => u === user.id)
+        if (!user) await inter.reply({content: emojis.x+' **'+user.tag+'** is not verified on '+guild.name, ephemeral: true})
         await inter.reply({content: emojis.loading+' Joining **'+user.tag+'** to '+guild.name, ephemeral: true})
         let data = await tokenModel.findOne({id: user.id})
         let error = false
