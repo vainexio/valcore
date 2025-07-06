@@ -17,6 +17,25 @@ module.exports = {
   deleteSlashes: ['1234990419536773262'],
   slashes: [
     {
+      "name": "unverify_on_leave",
+      "type": 1,
+      "description": "Unverify on leave feature",
+      "options": [
+        {
+          "name": 'key',
+          "description": 'Access key',
+          "type": 3,
+          "required": true,
+        },
+        {
+          "name": 'enabled',
+          "description": 'Enable feature?',
+          "type": 5,
+          "required": true,
+        },
+      ],
+    },
+    {
       "name": "i_got_termed",
       "type": 1,
       "description": "Instructions if your server got termed",

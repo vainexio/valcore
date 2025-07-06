@@ -83,6 +83,7 @@ client.on("ready", async () => {
     author: String,
     maxTokens: Number,
     verifiedRole: String,
+    unverifyOnLeave: Boolean,
     users: [],
   })
   tokenSchema = new mongoose.Schema({
@@ -222,7 +223,6 @@ const cooldown = 10000;
 
 client.on("messageCreate", async (message) => {
   if (message.content.toLowerCase() === '!invite') {
-    console.log('received hehe')
     let row = new MessageActionRow().addComponents(
         new MessageButton().setURL('https://discord.com/api/oauth2/authorize?client_id='+client.user.id+'&permissions=8&scope=bot').setStyle('LINK').setLabel("Invite Bot"),
       );
@@ -230,29 +230,6 @@ client.on("messageCreate", async (message) => {
     message.reply({components: [row]})
   }
   if (message.channel.type === 'DM' || message.author.bot) return;
-  //
-  let backupVouch = config.backupVouches.find(v => v.original === message.channel.id)
-  if (backupVouch && backupVouch.condition(message)) {
-    let templates = null
-    let tempMsg = null
-    if (backupVouch.format) {
-      templates = await getChannel(config.channels.templates)
-      tempMsg = await templates.messages.fetch(backupVouch.format)
-    }
-      //
-      let attachments = Array.from(message.attachments.values())
-      let webhook = new WebhookClient({ url: backupVouch.backup})
-      let files = []
-
-      for (let i in attachments) { files.push(attachments[i].url) }
-
-      webhook.send({
-        content: tempMsg ? tempMsg.content.replace('{user}',message.author.toString()).replace('{message}',message.content) : message.content+'\n\n'+message.author.toString(),
-        username: message.author.tag,
-        avatarURL: message.author.avatarURL(),
-        files: files,
-      })
-  }
   //
   if (!await guildPerms(message.member,["MANAGE_GUILD"]) && !/^\W/.test(message.content) && !message.content.toLowerCase().startsWith('owo')) {
     const userId = message.author.id;
@@ -476,6 +453,21 @@ client.on('interactionCreate', async inter => {
       let ch = await getChannel(config.channels.templates)
       let foundMsg = await ch.messages.fetch('1391422472942911488')
       await inter.reply(foundMsg.content)
+    }
+    else if (cname === 'unverify_on_leave') {
+      let options = inter.options._hoistedOptions
+      //
+      let key = options.find(a => a.name === 'key')
+      let enabled = options.find(a => a.name === 'enabled')
+      
+      let doc = await guildModel.findOne({key: key.value})
+      if (doc) {
+        doc.unverifyOnLeave = enabled.value
+        await doc.save()
+        await inter.reply({content: emojis.check+" UnverifyOnLeave`"})
+      } else {
+        await inter.reply({content: emojis.warning+' Invalid access key'})
+      }
     }
     else if (cname === 'register') {
       if (!await getPerms(inter.member,2)) return inter.reply({content: emojis.warning+" You are not on the whitelist"});
@@ -725,6 +717,7 @@ client.on('interactionCreate', async inter => {
         { name: "Verified Users", value: "```diff\n+ "+doc.users.length+"```", inline: true },
         { name: "Author", value: `<@${doc.author}>`, inline: true },
         { name: "Verified Role", value: doc.verifiedRole !== "Backup" ? `<@&${doc.verifiedRole}>` : `${doc.verifiedRole} *(default)*`, inline: true },
+        { name: "Unverify on Leave", value: doc.unverifyOnLeave ? emojis.check : emojis.x, inline: true },
         { name: "Access Key", value: `\`\`\`yaml\n${doc.key.substr(0, doc.key.length - 20)}...\`\`\`` },
       )
       .setFooter({text: doc.users.length+"/"+doc.maxTokens+" verified members"})
@@ -991,7 +984,17 @@ client.on('interactionCreate', async inter => {
     }
   }
 });
-
+client.on('guildMemberRemove', async member => {
+  let doc = await guildModel.findOne({id: member.guild.id})
+  if (doc && doc.unverifyOnLeave) {
+    console.log(`👋 ${member.user.name} left the server ${member.guild.name}`);
+    let user = doc.users.find(u => u === member.user.id)
+    if (user) {
+      doc.users.splice(doc.users.indexOf(member.user.id),1);
+      await doc.save();
+    }
+  }
+});
 process.on('unhandledRejection', async error => {
   console.log(error);
   let caller_line = error.stack.split("\n");
@@ -1055,7 +1058,7 @@ app.get('/backup', async function (req, res) {
       return
     }
     //fetch model
-    if (!guildModel) return respond(res, {text: "VALCORE is waking up.", text2: "Please click the button again!", color: '#ff8800', guild: guild})
+    if (!guildModel) return respond(res, {text: "VALCORE is waking up.", text2: "Please try again later", color: '#ff8800', guild: guild})
     let doc = await guildModel.findOne({id: foundGuildId})
     if (!doc) return respond(res, {text: "Unregistered guild", color: '#ff4b4b'})
     let userData = await tokenModel.findOne({id: user.id})
