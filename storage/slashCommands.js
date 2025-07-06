@@ -17,6 +17,12 @@ module.exports = {
   deleteSlashes: ['1234990419536773262'],
   slashes: [
     {
+      "name": "i_got_termed",
+      "type": 1,
+      "description": "Instructions if your server got termed",
+      "options": [],
+    },
+    {
       "name": "merge",
       "type": 1,
       "description": "Merge data",

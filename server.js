@@ -391,42 +391,6 @@ client.on("messageCreate", async (message) => {
       await message.reply("Total users checked: "+data.total+"\nCalibrated: "+data.calibrated+"\nFailed: "+data.failed)
     })
   }
-  else if (isCommand('check',message)) {
-    if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+" You can't do that sir"});
-    let guilds = await guildModel.find()
-      let list = []
-      let topTen = ""
-      let count = 0
-      for (let i in guilds) {
-        count++
-        let guild = guilds[i]
-        list.push({id: guild.id, users: guild.users.length, author: guild.author})
-      }
-    let content = ''
-    for (let i in list) {
-      let data = list[i]
-      let guild = await getGuild(data.id)
-      let counter = 0
-      if (guild) {
-        counter++
-        let author = await getMember(data.author,message.guild)
-        let emoji = ''
-        if (author) {
-          emoji = '📄'
-          if (await hasRole(author,['1258092843516563521'],message.guild)) {
-            emoji += '✅'
-            await addRole(author,['1259460543157112832'],message.guild)
-          } else {
-            emoji += '❌'
-          }
-        }
-        else emoji = '❌'
-        
-        content += counter+'. '+emoji+' <@'+data.author+'>\n'
-      }
-    }
-    await message.reply(content+'\n\n📄 = in server\n✅ = has @comms role\n❌ = neither')
-  }
 });//END MESSAGE CREATE*/
 let joinDebounce = false
 client.on('interactionCreate', async inter => {
@@ -507,6 +471,11 @@ client.on('interactionCreate', async inter => {
         }
         botMsg.edit({ components: [row] });
       })
+    }
+    else if (cname === 'i_got_termed') {
+      let ch = await getChannel(config.channels.templates)
+      let foundMsg = await ch.messages.fetch('1391422472942911488')
+      await inter.reply(foundMsg.content)
     }
     else if (cname === 'register') {
       if (!await getPerms(inter.member,2)) return inter.reply({content: emojis.warning+" You are not on the whitelist"});
@@ -720,20 +689,6 @@ client.on('interactionCreate', async inter => {
             let unverify = new MessageActionRow().addComponents(
               new MessageButton().setCustomId('unverifPrompt-'+doc.id).setStyle('SECONDARY').setLabel('Unverify'),
             );
-                
-            let embed = new MessageEmbed()
-            .setTitle("🔒 You were joined to a server!")
-            .setDescription(
-              "I joined you on a server (**" + guild.name + "**) on your behalf as directed by the server owner.\n\n" +
-              "Feel free to ignore this message if you think that this is appropriate. You can **unverify** yourself at any time."
-            )
-            .addFields(
-              {name: "Author", value: "<@"+inter.user.id+">"},
-              {name: "Message", value: reason.value},
-            )
-            .setColor(colors.red)
-            .setFooter({text: "Thank you for your attention"})
-            .setTimestamp();
             
             msgContent = msgContent.replace('{server}',guild.name)
             msgContent = msgContent.replace('{user}','<@'+doc.author+'>')
@@ -767,7 +722,6 @@ client.on('interactionCreate', async inter => {
       .setTitle(`${guild?.name}`)
       .setThumbnail(guild?.iconURL())
       .addFields(
-        //{ name: "Guild ID", value: '`'+doc.id+'`' },
         { name: "Verified Users", value: "```diff\n+ "+doc.users.length+"```", inline: true },
         { name: "Author", value: `<@${doc.author}>`, inline: true },
         { name: "Verified Role", value: doc.verifiedRole !== "Backup" ? `<@&${doc.verifiedRole}>` : `${doc.verifiedRole} *(default)*`, inline: true },
@@ -977,79 +931,6 @@ client.on('interactionCreate', async inter => {
       .setColor(colors.blue)
       await inter.editReply({embeds: [embed]})
   }
-    else if (cname === 'dupvouches') {
-      if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+" You can't do that sir."});
-      await inter.reply({content: "Duplicating vouches "+emojis.loading});
-      let options = inter.options._hoistedOptions
-      //
-      let oldVouch = options.find(a => a.name === 'old_vouch_id')
-      let newVouch = options.find(a => a.name === 'new_vouch_id')
-      
-      oldVouch = await getChannel(oldVouch.value)
-      newVouch = await getChannel(newVouch.value)
-      
-      
-      if (!oldVouch) return inter.editReply({content: emojis.warning+" Invalid old vouch ID", ephemeral: true})
-      else if (!newVouch) return inter.editReply({content: emojis.warning+" Invalid new vouch ID", ephemeral: true})
-      
-      let templates = await getChannel(config.channels.templates)
-      let tempMsg = await templates.messages.fetch('1260909239455711375')
-      let data = {
-        completed: 0,
-        f: {
-          last_id: null,
-          msgSize: 0,
-          totalMsg: 0,
-        }
-      }
-      
-      let msgSize = 0
-      let totalMsg = 0
-      
-      while (true) {
-        const options = { limit: 100 };
-        if (data.f.last_id) options.before = data.f.last_id;
-        
-        //Put to storage
-        await oldVouch.messages.fetch(options).then(async messages => {
-          data.f.last_id = messages.last()?.id;
-          totalMsg += messages.size
-          msgSize = messages.size
-          let more = []
-          await messages.forEach(async (gotMsg) => {
-            console.log(gotMsg.author.username+' '+gotMsg.id)
-            //if (gotMsg.author.username === 'ayumi haven') {
-              more.push(gotMsg)
-            //}
-          })
-          
-          for (let i in more) {
-            let gotMsg = more[i]
-            await sleep(1000)
-            
-            console.log(gotMsg.embeds[0])
-            if (gotMsg.author.bot) continue;
-            let embed = new MessageEmbed()
-            .setDescription(tempMsg.content.replace('{user}',gotMsg.author.toString()).replace('{message}',gotMsg.content))
-            .setColor(colors.none)
-            
-            let attachments = Array.from(gotMsg.attachments.values())
-            let files = []
-            for (let i in attachments) { files.push(attachments[i].url) }
-            //let webhook = new WebhookClient({ url: 'https://discord.com/api/webhooks/1261656448493162566/MSbF2G1MLfOP4v5M6TPXtaMlWrI8T7c0Z3yW_TEXwzD1HPih9BwNBbpod4bk5DRgrY_V'})
-            //try { await webhook.send({embeds: gotMsg.embeds, files: files, username: gotMsg.author.tag, avatarURL: gotMsg.author.avatarURL(),}) } catch(err) {}
-            //try { await newVouch.send({embeds: [gotMsg.embeds[0]]}) } catch (err) {}
-            try { await newVouch.send({content: tempMsg.content.replace('{user}',gotMsg.author.toString()).replace('{message}',gotMsg.content), files: files}) } catch (err) {}
-            data.completed++
-          }
-        });
-        
-        if (msgSize != 100) {
-          await inter.channel.send("Successfully duplicated "+data.completed+" vouches")
-          break;
-        }
-      }
-  }
   }
   //BUTTONS
   else if (inter.isButton() || inter.isSelectMenu()) {
@@ -1206,7 +1087,6 @@ app.get('/backup', async function (req, res) {
     }
     if (await hasRole(member,['restricted'],guild)) return respond(res, {text: 'Cannot verify due to restriction', color: '#ff4b4b', guild: guild})
     if (doc.users.length >= doc.maxTokens) return respond(res, {text: 'Reached maximum tokens<br />('+doc.users.length+'/'+doc.maxTokens+')', color: '#ff4b4b', guild: guild})
-    //else if (!guildToken && doc.users.length >= config.guildMaxtokens) return respond(res, {text: 'Reached maximum tokens<br />('+doc.users.length+'/1000)', color: '#ff4b4b', guild: guild})
     let foundUser = doc.users.find(u => u === user.id)
     let customMsg = config.customMessages.find(c => c.id === user.id)
     if (!foundUser) {
@@ -1216,7 +1096,7 @@ app.get('/backup', async function (req, res) {
       let userIndex = doc.users.indexOf(user.id) + 1
       let notAdded = member ? await addRole(member,[doc.verifiedRole,"sloopie"],guild) : null
       if (notAdded) console.log('Not added',notAdded)
-      return respond(res, {text: customMsg ? customMsg.msg : 'Already verified', text2: '<b>'+getNth(userIndex)+'</b> member', color: '#ff8800', guild: guild})
+      return respond(res, {text: customMsg ? customMsg.msg : 'Already verified', text2: doc.users.length+'/'+doc.maxTokens+" MEMBERS", color: '#ff8800', guild: guild})
     }
     //
     await doc.save();
@@ -1230,17 +1110,6 @@ app.get('/backup', async function (req, res) {
     let unverify = new MessageActionRow().addComponents(
       new MessageButton().setCustomId('unverifPrompt-'+doc.id).setStyle('SECONDARY').setLabel('Unverify'),
     );
-    
-    let embed = new MessageEmbed()
-    .setTitle("🔒 What is the Verification for?")
-    .setDescription(
-        "You have just completed the verification process! This allows our bot to **join you on servers on your behalf**.\n\n" +
-        "If you do not agree to this, you can **unverify** yourself from **" + guild.name + "** at any time."
-    )
-    .setThumbnail(guild.iconURL())
-    .setColor(colors.red)
-    .setFooter({text: "Thank you for your attention"}) 
-    .setTimestamp();
     
     let ch = await getChannel(config.channels.templates)
     let foundMsg = await ch.messages.fetch('1261206731313385494')
