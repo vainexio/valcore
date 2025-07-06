@@ -367,9 +367,6 @@ No data failed 894504171334692906
 Fetch failed: 988707272001740830
 DiscordAPIError: The user account must first be verified
 
-Fetch failed: 1031521130969837588
-DiscordAPIError: You are at the 100 server limit.
-
 No data failed 797798405984223293
 
 No data failed 1054428823946547270
@@ -534,18 +531,12 @@ No data failed 1018344193648754758
 Fetch failed: 1277832331297685587
 DiscordAPIError: You are at the 100 server limit.
 
-Fetch failed: 772309305244385302
-DiscordAPIError: The user account must first be verified
-
 Fetch failed: 1127648737414619358
 DiscordAPIError: You are at the 100 server limit.
 
 No data failed 830519193022758992
 
 No data failed 766916952333090826
-
-Fetch failed: 657912075045306378
-DiscordAPIError: You are at the 100 server limit.
 
 No data failed 1223275950029017248
 
@@ -847,9 +838,6 @@ No data failed 839843721372893205
 
 No data failed 1090863592678633502
 
-Fetch failed: 783662975415353345
-DiscordAPIError: You are at the 100 server limit.
-
 No data failed 702572439753851060
 
 No data failed 757634350144553177
@@ -930,9 +918,6 @@ No data failed 893315862092726323
 
 No data failed 857213811290931210
 
-Fetch failed: 898237405029597304
-DiscordAPIError: The user account must first be verified
-
 No data failed 1331881066625237024
 
 Fetch failed: 1230479544012640328
@@ -992,6 +977,9 @@ No data failed 1227935895076732948
 No data failed 880753964470132746
 
 No data failed 533948029284122624
+
+Fetch failed: 1102461666114940978
+DiscordAPIError: The user is banned from this guild.
 
 Fetch failed: 465345179809873922
 DiscordAPIError: You are at the 100 server limit.
