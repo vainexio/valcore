@@ -13,8 +13,8 @@ ATTACHMENT - 11
 */
 
 module.exports = {
-  register: false,
-  deleteSlashes: ['1170002545335349308'],
+  register: true,
+  deleteSlashes: ['1234990419536773262'],
   slashes: [
     {
       "name": "merge",
@@ -165,9 +165,9 @@ module.exports = {
       ],
     },
     {
-      "name": "getkey",
+      "name": "data",
       "type": 1,
-      "description": "Get data key",
+      "description": "Get server data",
       "options": [
         {
           "name": 'id',

@@ -40,64 +40,8 @@ let emojis = {
 module.exports = {
   config: {
     customMessages: [],
-    backupVouches: [
-      {
-        original: '1138567779407114312', //pucca
-        backup: 'https://discord.com/api/webhooks/1212757261819183147/xJznpS1MWL9_kn73SxHTbDorDYSd5cmXNNqQy85vP7izAEMzBFje5sxt7R_bSHto9i2C',
-        condition: function(msg) { if (msg.attachments.size !== 0) return true }
-      },
-      {
-        original: '1126087601774940170', //knifeluvz
-        backup: 'https://discord.com/api/webhooks/1256236434260627460/vCL8KYTCdMtXvuR9fRpFms4TAqddncD9Bo6U4wFMeFbLSpEG-O3GMKykOj0AhLdvMwwb',
-        condition: function(msg) { if (msg.attachments.size !== 0) return true }
-      },
-      {
-        original: '1231186708922503200', //
-        backup: 'https://discord.com/api/webhooks/1261708850872975513/5FQsHP4Ml_K3CkHCOmnAcXfwfFPhOtyRPQzBJgjCTXjBzzvjQzFY0COt0xdWMGlH1BVq',
-        condition: function(msg) { return true }
-      },
-      {
-        original: '1002181939928764516', //
-        backup: 'https://discord.com/api/webhooks/1261280028776206346/gq_S1NjucdmqbnxHePpWnGOiYnS0ZIe7Attr8wlDEMjXwfDZkzKMpvjDTA1dIGUyZmNV',
-        format: '1261359865365008435',
-        condition: function(msg) { return true }
-      },
-      {
-        original: '1245216125004943481', //
-        backup: 'https://discord.com/api/webhooks/1261657812224839754/aAJ1ViPxDQGdIJ1PghIgRGpUIiqccmI56S2XQ9kbZxim-fuzLyyFdXitHOzHjoes12O-',
-        format: '1261359865365008435',
-        condition: function(msg) { return true }
-      },
-      {
-        original: '1160528180839460965', //luvaye
-        backup: 'https://discord.com/api/webhooks/1264439480958455810/BSU2xIGj0TurYqY-eE_Ro91d5RDXvrKX-Hk4zHmHaxy-wzELamyD44c59QPTBgMNakUj',
-        format: '1261359865365008435',
-        condition: function(msg) { return true }
-      },
-      {
-        original: '1186378538237034497', //temporeg
-        backup: 'https://discord.com/api/webhooks/1265324913250799656/QyguDuS_GuGplzVcyJIaqGrkhOFQ3GUPn5f0fcanFYA6cnG0qav3ljEPjk1FRLuycR1V',
-        format: '1261359865365008435',
-        condition: function(msg) { return true }
-      },
-      {
-        original: '1148528793951154227', //angieie
-        backup: 'https://discord.com/api/webhooks/1271030249123221524/ujfj0sYY1tLYmricVI9L49Z3VYTDVmkEUZTjlNLBqA0Xxp07-xGMvp98bX2cJvXyNfiV',
-        format: '1261359865365008435',
-        condition: function(msg) { return true }
-      },
-      {
-        original: '1267977401162268752', //teri
-        backup: 'https://discord.com/api/webhooks/1271034541670404126/6JE5yGXUTTnfpOJ1WZsL0viFCtP1SfdFFwOmidf3v5A5L_-jvMGlFvia2Om1ruicmkqj',
-        format: '1261359865365008435',
-        condition: function(msg) { return true }
-      },
-    ],
     version: '2',
     guildMaxtokens: 500,
-    guildTokens: [
-      { id: '1109020434449575936', maxTokens: 100000},
-    ],
     channels: {
       chat: '1047454193595732055',
       templates: '1109020434810294344',

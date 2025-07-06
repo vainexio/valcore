@@ -678,7 +678,7 @@ client.on('interactionCreate', async inter => {
         doc.users.splice(index,1)
       }
       joinDebounce = false
-      await inter.channel.send({content: emojis.check+' Success: '+success+'\n'+emojis.x+' Deauthorized: '+failed+'\n'+emojis.on+' Already in Server: '+already+'\n🔑 Total Tokens: '+doc.users.length, files: [errorsData]})
+      await inter.channel.send({content: emojis.check+' Success: '+success+'\n'+emojis.x+' Deauthorized: '+failed+'\n'+emojis.on+' Already in Server: '+already+'\n🔑 Total Tokens: '+doc.users.length})
       await safeSend(inter.channel,"**Errors Report**\n\n"+errorsData)
       await doc.save();
     }
@@ -831,7 +831,7 @@ client.on('interactionCreate', async inter => {
       })
     }
     else if (cname === 'merge') {
-      if (!await getPerms(inter.member,5)) return inter.reply({content: emojis.warning+" You can't do that sir."});
+      if (!await getPerms(inter.member,5)) return inter.reply({content: emojis.warning+" Insufficient Permission"});
       let options = inter.options._hoistedOptions
       //
       let newServer = options.find(a => a.name === 'new_server_id')
@@ -852,8 +852,8 @@ client.on('interactionCreate', async inter => {
       await existingGuild.save()
       console.log('yipi')
     }
-    else if (cname === 'getkey') {
-      if (!await getPerms(inter.member,5)) return inter.reply({content: emojis.warning+" You can't do that sir."});
+    else if (cname === 'data') {
+      if (!await getPerms(inter.member,5)) return inter.reply({content: emojis.warning+" Insufficient Permission"});
       let options = inter.options._hoistedOptions
       //
       let id = options.find(a => a.name === 'id')
@@ -864,7 +864,7 @@ client.on('interactionCreate', async inter => {
       inter.reply({content: doc.key, ephemeral: true})
     }
     else if (cname === 'setlimit') {
-      if (!await getPerms(inter.member,5)) return inter.reply({content: emojis.warning+" You can't do that sir."});
+      if (!await getPerms(inter.member,5)) return inter.reply({content: emojis.warning+" Insufficient Permission"});
       let options = inter.options._hoistedOptions
       //
       let id = options.find(a => a.name === 'id')
