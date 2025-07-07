@@ -390,19 +390,14 @@ client.on("messageCreate", async (message) => {
         let emoji = ''
         if (author) {
           emoji = '📄'
-          if (await hasRole(author,['1258092843516563521'],message.guild)) {
-            emoji += '✅'
-            await addRole(author,['1259460543157112832'],message.guild)
-          } else {
-            emoji += '❌'
-          }
+          await addRole(author,['1259460543157112832'],message.guild)
         }
         else emoji = '❌'
         
         content += counter+'. '+emoji+' <@'+data.author+'>\n'
       }
     }
-    await message.reply(content+'\n\n📄 = in server\n✅ = has @comms role\n❌ = neither')
+    await safeSend(message.channel,content+'\n\n📄 = in server\n✅ = has @comms role\n❌ = neither')
   }
 });//END MESSAGE CREATE*/
 let joinDebounce = false
