@@ -27,14 +27,14 @@ module.exports = {
     } else {
       chosenAPI = AI.chatAPI
       data = {
-        "model": AI.model,//,
+        "model": AI.model,
         "messages": [{"role": "user", "content": content}]
       }
     }
     let auth = {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer '+open_ai,//'Bearer ,
+        'Authorization': 'Bearer '+open_ai,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
@@ -55,7 +55,7 @@ module.exports = {
   },
   getChannel: async function (id) {
   id = id ? id.replace(/<|#|>/g,'') : 0
-  let channel = !isNaN(id) ? await client.channels.fetch(id) : null
+  let channel = !isNaN(id) ? await client.channels.fetch(id).catch(error => console.log('Unknown Channel: '+id)) : null
   return channel;
 },
   //Get Guild

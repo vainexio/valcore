@@ -154,6 +154,17 @@ module.exports = {
       id: '1248662787865968772',
       slash: true,
     },
+    {
+      Command: "i_got_termed",
+      Template: "",
+      Alias: [],
+      Category: "Main",
+      Desc: 'Instructions on what to do if you got termed',
+      ex: [''],
+      level: 0,
+      id: '1391422887231098880',
+      slash: true,
+    },
   ],
   permissions: [
     {
