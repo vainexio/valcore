@@ -16,7 +16,7 @@ let colors = {
   none: "#2B2D31",
 }
 let emojis = {
-  check: '<a:check:969936488739512340> ',
+  check: '<a:check:969936488739512340>',
   x: '<a:Xmark:969401924736651284>',
   loading: '<a:loading2:976650648600854538>',
   warning: '<:S_warning:1108743925012902049>',
