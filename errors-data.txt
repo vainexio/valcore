@@ -1,7 +1,3 @@
-No data failed 389223404118736896
-
-No data failed 1168552843335172217
-
 Fetch failed: 1266374424039391343
 DiscordAPIError: You are at the 100 server limit.
 
@@ -11,93 +7,23 @@ DiscordAPIError: You are at the 100 server limit.
 Fetch failed: 871625165677666344
 DiscordAPIError: You are at the 100 server limit.
 
-No data failed 1101102939831025685
-
-No data failed 884464151638999040
-
-No data failed 882506628644089856
-
-No data failed 1341018083116187689
-
-No data failed 1354314836896645182
-
-No data failed 1278014422983376976
-
 Fetch failed: 1092404721794433087
 DiscordAPIError: You are at the 100 server limit.
 
 Fetch failed: 976375331520909312
 DiscordAPIError: You are at the 100 server limit.
 
-No data failed 1053284111025971281
-
-No data failed 939165739116539974
-
-No data failed 1345025325263753288
-
-No data failed 889715494540677180
-
 Fetch failed: 1125677023440945243
 DiscordAPIError: You are at the 100 server limit.
-
-No data failed 1149633035927568435
-
-No data failed 877527357357973506
 
 Fetch failed: 1262584220359065672
 DiscordAPIError: You are at the 100 server limit.
 
-No data failed 1003251556289892362
-
-No data failed 1312602324249874563
-
-No data failed 663180744109195287
-
-No data failed 1370406833520378006
-
-No data failed 1230911931456553118
-
-No data failed 925715759945109555
-
-No data failed 541880970358554642
-
-No data failed 1360583741814341834
-
-No data failed 1371423029258747984
-
-No data failed 1180058383424950324
-
-No data failed 811843312280403969
-
-No data failed 732418600500985886
-
-No data failed 1373928664336437293
-
-No data failed 1372789623146807407
-
-No data failed 1099984476915900496
-
 Fetch failed: 1242414503245778944
 DiscordAPIError: You are at the 100 server limit.
 
-No data failed 572400734398578699
-
-No data failed 1379407213101322293
-
-No data failed 1376451434563764334
-
-No data failed 1240926530566361119
-
-No data failed 1365193968480161885
-
-No data failed 1236305312680771647
-
 Fetch failed: 840192271680798740
 DiscordAPIError: You are at the 100 server limit.
-
-No data failed 831984274181062708
-
-No data failed 1378184132995186872
 
 Fetch failed: 790095196124872715
 DiscordAPIError: You are at the 100 server limit.
@@ -111,16 +37,8 @@ DiscordAPIError: You are at the 200 server limit.
 Fetch failed: 798523160517279785
 DiscordAPIError: You are at the 100 server limit.
 
-No data failed 1367818914305671299
-
 Fetch failed: 860207004647030824
 DiscordAPIError: You are at the 100 server limit.
-
-No data failed 1380873691864367176
-
-No data failed 879591983901986827
-
-No data failed 1173224730829017118
 
 Fetch failed: 915463832346955836
 DiscordAPIError: You are at the 100 server limit.
@@ -137,21 +55,11 @@ DiscordAPIError: You are at the 100 server limit.
 Fetch failed: 936154362504446002
 DiscordAPIError: You are at the 100 server limit.
 
-No data failed 1161052846159044740
-
 Fetch failed: 810436427938005042
 DiscordAPIError: You are at the 100 server limit.
 
-No data failed 1289880122681462814
-
-No data failed 1263746830903279796
-
 Fetch failed: 1010742394699919401
 DiscordAPIError: You are at the 100 server limit.
-
-No data failed 830337546130554891
-
-No data failed 780243903176900648
 
 Fetch failed: 1025573277843869746
 DiscordAPIError: You are at the 100 server limit.
@@ -161,10 +69,6 @@ DiscordAPIError: You are at the 100 server limit.
 
 Fetch failed: 1351579814984683635
 DiscordAPIError: You are at the 100 server limit.
-
-No data failed 1257968519526744096
-
-No data failed 872110178135318599
 
 Fetch failed: 692250247073759252
 DiscordAPIError: You are at the 100 server limit.
@@ -184,12 +88,6 @@ DiscordAPIError: You are at the 100 server limit.
 Fetch failed: 585783312644309032
 DiscordAPIError: You are at the 100 server limit.
 
-No data failed 879351420162289724
-
-No data failed 1360777333052670122
-
-No data failed 853254825604939777
-
 Fetch failed: 773468891413217312
 DiscordAPIError: You are at the 200 server limit.
 
@@ -202,16 +100,8 @@ DiscordAPIError: The user account must first be verified
 Fetch failed: 1303011769274335337
 DiscordAPIError: You are at the 100 server limit.
 
-No data failed 923961790730231869
-
-No data failed 1202202964115324989
-
 Fetch failed: 1379811091630264394
 DiscordAPIError: You are at the 200 server limit.
-
-No data failed 1382680028390887434
-
-No data failed 1143882626462142474
 
 Fetch failed: 732965865108013179
 DiscordAPIError: You are at the 100 server limit.
@@ -229,5 +119,11 @@ Fetch failed: 594507254707781642
 DiscordAPIError: You are at the 100 server limit.
 
 Fetch failed: 1271477013408120966
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 725809758589681685
+DiscordAPIError: You are at the 100 server limit.
+
+Fetch failed: 1132132041845112842
 DiscordAPIError: You are at the 100 server limit.
 
