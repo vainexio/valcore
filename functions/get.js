@@ -60,7 +60,7 @@ module.exports = {
 },
   //Get Guild
   getGuild: async function (id) {
-  let guild = await client.guilds.fetch(id);
+  let guild = await client.guilds.fetch(id).catch(error => console.log('Unknown Guild: '+id))
   return guild;
 },
   //Get Users

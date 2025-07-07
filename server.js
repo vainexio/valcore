@@ -368,6 +368,42 @@ client.on("messageCreate", async (message) => {
       await message.reply("Total users checked: "+data.total+"\nCalibrated: "+data.calibrated+"\nFailed: "+data.failed)
     })
   }
+  else if (isCommand('check',message)) {
+    if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+" You can't do that sir"});
+    let guilds = await guildModel.find()
+      let list = []
+      let topTen = ""
+      let count = 0
+      for (let i in guilds) {
+        count++
+        let guild = guilds[i]
+        list.push({id: guild.id, users: guild.users.length, author: guild.author})
+      }
+    let content = ''
+    for (let i in list) {
+      let data = list[i]
+      let guild = await getGuild(data.id)
+      let counter = 0
+      if (guild) {
+        counter++
+        let author = await getMember(data.author,message.guild)
+        let emoji = ''
+        if (author) {
+          emoji = '📄'
+          if (await hasRole(author,['1258092843516563521'],message.guild)) {
+            emoji += '✅'
+            await addRole(author,['1259460543157112832'],message.guild)
+          } else {
+            emoji += '❌'
+          }
+        }
+        else emoji = '❌'
+        
+        content += counter+'. '+emoji+' <@'+data.author+'>\n'
+      }
+    }
+    await message.reply(content+'\n\n📄 = in server\n✅ = has @comms role\n❌ = neither')
+  }
 });//END MESSAGE CREATE*/
 let joinDebounce = false
 client.on('interactionCreate', async inter => {
