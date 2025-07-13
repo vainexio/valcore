@@ -1138,5 +1138,5 @@ app.get('/backup', async function (req, res) {
   //
 });
 app.get('/', async function (req, res) {
-  res.status(200).send({ status: "VALCORE is up and running!" })
+  res.status(200).send({ status: "VALCORE is up and running!!" })
 });
