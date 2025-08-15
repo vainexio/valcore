@@ -14,12 +14,12 @@ ATTACHMENT - 11
 
 module.exports = {
   register: true,
-  deleteSlashes: ['1170714395706392686', '1250875706100023417', '1169612098188349510', '1169578034328776724', '1170714395706392686', '1169591423566368840', '1170281459177771099', '1169829357171245127'],
+  deleteSlashes: ['1391422887231098880'],
   slashes: [
     {
-      "name": "unverify_on_leave",
+      "name": "settings",
       "type": 1,
-      "description": "Unverify on leave feature",
+      "description": "Bot settings",
       "options": [
         {
           "name": 'key',
@@ -27,63 +27,25 @@ module.exports = {
           "type": 3,
           "required": true,
         },
-        {
-          "name": 'enabled',
-          "description": 'Enable feature?',
-          "type": 5,
-          "required": true,
-        },
       ],
     },
     {
-      "name": "i_got_termed",
+      "name": "restore_members",
       "type": 1,
-      "description": "Instructions if your server got termed",
+      "description": "Instructions to restore your members on your new server",
       "options": [],
-    },
-    {
-      "name": "merge",
-      "type": 1,
-      "description": "Merge data",
-      "options": [
-        {
-          "name": 'new_server_id',
-          "description": 'New server ID',
-          "type": 3,
-          "required": true,
-        },
-        {
-          "name": 'key',
-          "description": 'Access key',
-          "type": 3,
-          "required": true,
-        },
-      ],
-    },
-    {
-      "name": "dupvouches",
-      "type": 1,
-      "description": "Duplicate server vouches",
-      "options": [
-        {
-          "name": 'old_vouch_id',
-          "description": 'Old vouch channel ID',
-          "type": 3,
-          "required": true,
-        },
-        {
-          "name": 'new_vouch_id',
-          "description": 'New vouch channel ID',
-          "type": 3,
-          "required": true,
-        },
-      ]
     },
     {
       "name": "joinall",
       "type": 1,
       "description": "Join all your verified users to your backup server",
       "options": [
+        {
+          "name": 'key',
+          "description": 'Access key',
+          "type": 3,
+          "required": true,
+        },
         {
           "name": 'target_server_id',
           "description": 'The server you want your verified users to join',
@@ -96,12 +58,6 @@ module.exports = {
           "type": 3,
           "required": true,
         },
-        {
-          "name": 'key',
-          "description": 'Access key',
-          "type": 3,
-          "required": false,
-        },
       ]
     },
     {
@@ -109,6 +65,12 @@ module.exports = {
       "type": 1,
       "description": "Joins a verified user to a server",
       "options": [
+        {
+          "name": 'key',
+          "description": 'Access key',
+          "type": 3,
+          "required": true,
+        },
         {
           "name": 'target_server_id',
           "description": 'The server you want the user to join',
@@ -130,12 +92,6 @@ module.exports = {
         {
           "name": 'target_user_id',
           "description": 'User ID you want to join',
-          "type": 3,
-          "required": false,
-        },
-        {
-          "name": 'key',
-          "description": 'Access key',
           "type": 3,
           "required": false,
         },
@@ -165,29 +121,19 @@ module.exports = {
       "type": 1,
       "description": "Get backup status of a guild",
       "options": [
-        /*{
-          "name": 'unverify_button',
-          "description": 'Show unverify button',
-          "type": 3,
-          "choices": [
-            {
-              name: 'show',
-              value: 'show',
-            },
-            {
-              name: 'hide',
-              value: 'hide',
-            },
-          ],
-          "required": false,
-        },*/
         {
-          "name": 'guild_id',
-          "description": 'Guild ID',
+          "name": 'key',
+          "description": 'Access Key',
           "type": 3,
           "required": false,
         },
       ],
+    },
+    {
+      "name": "verify_link",
+      "type": 1,
+      "description": "Get verification link of a guild",
+      "options": [],
     },
     {
       "name": "data",
@@ -217,56 +163,6 @@ module.exports = {
           "name": 'limit',
           "description": 'New max tokens limit',
           "type": 10,
-          "required": true,
-        },
-      ],
-    },
-    {
-      "name": "setrole",
-      "type": 1,
-      "description": "Update verified role",
-      "options": [
-        {
-          "name": 'key',
-          "description": 'Access Key',
-          "type": 3,
-          "required": true,
-        },
-        {
-          "name": 'role',
-          "description": 'New verified role',
-          "type": 8,
-          "required": true,
-        },
-      ],
-    },
-    {
-      "name": "check",
-      "type": 1,
-      "description": "Check if user if verified",
-      "options": [
-        {
-          "name": 'user',
-          "description": 'Target user',
-          "type": 6,
-          "required": true,
-        },
-      ],
-    },
-    {
-      "name": "leaderboard",
-      "type": 1,
-      "description": "Get leaderboard",
-    },
-    {
-      "name": "addroles",
-      "type": 1,
-      "description": "Add backup role",
-      "options": [
-        {
-          "name": 'key',
-          "description": 'Access Key',
-          "type": 3,
           "required": true,
         },
       ],

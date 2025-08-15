@@ -1,31 +1,22 @@
-//Glitch Project
+// Project
+require('dotenv').config();
 const express = require('express');
-const https = require('https');
 const app = express();
 const fetch = require('node-fetch');
 const mongoose = require('mongoose');
-const moment = require('moment')
-const HttpsProxyAgent = require('https-proxy-agent');
-const url = require('url');
-const discordTranscripts = require('discord-html-transcripts');
-const wait = require('node:timers/promises').setTimeout;
 const cc = 'KJ0UUFNHWBJSE-WE4GFT-W4VG'
 const fs = require('fs-extra')
-const { createProxyMiddleware } = require('http-proxy-middleware');
 
-//
-//Discord
+// Discord
 const Discord = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
 const {WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu} = Discord; 
-//const moment = require('moment');
 const myIntents = new Intents();
 myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_MESSAGES);
 const client = new Client({ intents: myIntents , partials: ["CHANNEL"] });
 
-//Env
+// Env
 const token = process.env.SECRET;
-const open_ai = process.env.OPEN_AI
 const mongooseToken = process.env.MONGOOSE;
 
 async function startApp() {
@@ -40,7 +31,6 @@ async function startApp() {
     });
 }
 startApp();
-let cmd = true
 
 let guildSchema
 let guildModel
@@ -89,6 +79,7 @@ client.on("ready", async () => {
     response = await response.json();
   }
     for (let i in slashCmd.deleteSlashes) {
+      await sleep(4000)
       let deleteUrl = "https://discord.com/api/v10/applications/"+client.user.id+"/commands/"+slashCmd.deleteSlashes[i]
       let deleteRes = await fetch(deleteUrl, {
         method: 'delete',
@@ -118,11 +109,10 @@ let listener = app.listen(process.env.PORT, function() {
 ░╚═══██╗██╔══╝░░░░░██║░░░░░░██║░░░██║██║╚████║██║░░╚██╗░╚═══██╗
 ██████╔╝███████╗░░░██║░░░░░░██║░░░██║██║░╚███║╚██████╔╝██████╔╝
 ╚═════╝░╚══════╝░░░╚═╝░░░░░░╚═╝░░░╚═╝╚═╝░░╚══╝░╚═════╝░╚═════╝░*/
-//LOG VARIABLES
 var output = "901759430457167872";
 const settings = require('./storage/settings_.js')
 const {config, auth, prefix, colors, status, theme, commands, permissions, emojis} = settings
-//Slash Commands
+// Slash Commands
 const slashCmd = require("./storage/slashCommands.js");
 const { slashes } = slashCmd;
 /*
@@ -192,8 +182,54 @@ const {getRole, addRole, removeRole, hasRole} = roles
 
 const messageCount = new Map();
 const lastMessages = new Map();
-const spamThreshold = 8;
-const cooldown = 10000;
+
+async function refreshOneToken(user) {
+  const now = getTime(new Date());
+  if (now < user.expiresAt) return { success: true, refreshed: false, access_token: user.access_token };
+
+  const params = new URLSearchParams();
+  params.append('client_id', client.user.id);
+  params.append('client_secret', process.env.clientSecret);
+  params.append('grant_type', 'refresh_token');
+  params.append('refresh_token', user.refresh_token);
+
+  const headers = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+  };
+
+  try {
+    let response = await fetch('https://discord.com/api/oauth2/token', {
+      method: 'POST',
+      body: params,
+      headers: headers
+    });
+
+    if (response.status === 200) {
+      const result = await response.json();
+
+      user.access_token = result.access_token;
+      user.refresh_token = result.refresh_token;
+      user.createdAt = now;
+      user.expiresAt = getTime(new Date().getTime() + (result.expires_in * 1000));
+
+      await user.save();
+
+      return {
+        success: true,
+        refreshed: true,
+        access_token: result.access_token
+      };
+    } else if (response.status === 400) {
+      await tokenModel.deleteOne({ id: user.id });
+      return { success: false, error: "Invalid refresh token", deleted: true };
+    } else {
+      return { success: false, error: `${response.status} - ${response.statusText}` };
+    }
+  } catch (err) {
+    console.error("Single token refresh error:", err);
+    return { success: false, error: err.toString() };
+  }
+}
 
 client.on("messageCreate", async (message) => {
   if (message.content.toLowerCase() === '!invite') {
@@ -373,92 +409,78 @@ client.on("messageCreate", async (message) => {
     }
     await safeSend(message.channel,content+'\n\n📄 = in server\n✅ = has @comms role\n❌ = neither')
   }
-});//END MESSAGE CREATE*/
+});/*END MESSAGE CREATE*/
 let joinDebounce = false
 client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
-    //Back up
-    if (cname === 'help') {
-      let botMsg = null
-      let row = new MessageActionRow().addComponents(
-        new MessageButton().setCustomId('desc').setStyle('DANGER').setLabel('Description'),
-        new MessageButton().setCustomId('template').setStyle('SECONDARY').setLabel('Template'),
-      );
-      await inter.reply({content: emojis.loading, ephemeral: true});
-      let current = 'desc'
-      async function displayHelp(type) {
-        let known = []
-        let embed = null
+      // Setup
+    if (cname === 'register') {
+      if (!await getPerms(inter.member,2)) return inter.reply({content: emojis.warning+" You are not on the whitelist"});
+      let options = inter.options._hoistedOptions
+      //
+      let guildId = options.find(a => a.name === 'guild_id')
+      let guild = await getGuild(guildId.value)
+      if (!guild) return inter.reply({content: emojis.warning+' Cannot find guild. Make sure that the bot is on the server that you wish to register'})
+      if (!await guildPerms(await getMember(inter.user.id,guild),["MANAGE_GUILD"])) return inter.reply({content: emojis.warning+' You must have the **MANAGE SERVER** permission in the server that you want to register'});
       
-        embed = new MessageEmbed()
-          .setAuthor({name: "Valcore Commands", iconURL: client.user.avatarURL()})
-          .setDescription("```js\n[] - Required Argument | () - Optional Argument```")
-          .setColor(theme)
-          .setTimestamp()
-        
-        for (let i in commands) {
-          if (await getPerms(inter.member, commands[i].level) || commands[i].level === 0) {
+      let doc = await guildModel.findOne({id: guild.id})
+      if (doc) return inter.reply({content: emojis.warning+' This guild was already registered.'})
+      let docAuthor = await guildModel.findOne({author: inter.user.id})
+      if (docAuthor && inter.user.id !== '497918770187075595') return inter.reply({content: emojis.warning+' You are limited to register 1 only.'})
       
-            let foundCmd = await known.find(a => a === commands[i].Category)
-            if (!foundCmd) {
-              known.push(commands[i].Category)
-              embed = new MessageEmbed(embed)
-                .addField(commands[i].Category,'[_]')
-            }
-          }
-        }
+      let newDoc = new guildModel(guildSchema)
+      newDoc.id = guild.id
+      newDoc.key = makeCode(30)
+      newDoc.author = inter.user.id
+      newDoc.maxTokens = config.guildMaxtokens
+      newDoc.verifiedRole = "Backup"
+      await newDoc.save()
         
-        for (let i in commands) {
-          if (await getPerms(inter.member, commands[i].level) || commands[i].level === 0) {
-            let field = embed.fields.find(field => field.name === commands[i].Category)
-    
-            if (field) {
-              let template = commands[i].Template.length > 0 ? ' '+commands[i].Template : ''
-              let desc = commands[i].Desc.length > 0 ? ' — *'+commands[i].Desc+'*' : ''
-              let fieldValue = field.value.replace('[_]','')
-              if (commands[i].slash) {
-                embed.fields[embed.fields.indexOf(field)] = {name: commands[i].Category, value: fieldValue+(type === 'desc' ? '</'+commands[i].Command+':'+commands[i].id+'>'+desc : '</'+commands[i].Command+':'+commands[i].id+'>'+template)+'\n'}
-              } else {
-                embed.fields[embed.fields.indexOf(field)] = {name: commands[i].Category, value: fieldValue+(type === 'desc' ? '`'+prefix+commands[i].Command+'`'+desc : '`'+prefix+commands[i].Command+'`'+template)+'\n'}
-              }
-            } else {
-              console.log("Invalid Category: "+commands[i].Category)
-            }
-          }
-        }
-        if (botMsg) return embed;
-        !botMsg ? await inter.channel.send({ embeds: [embed], components: [row]}).then(msg => botMsg = msg) : null
+      await inter.reply({content: emojis.on+" Your guild was registered!"})
+
+      let embed = new MessageEmbed()
+      .addFields(
+        {name: "Generated Key", value: "This key was generated for the first time. Make sure you save it externally!"},
+        {name: "Data", value: "Guild ID `"+guild.id+"`\nGuild Name `"+guild.name+"`"}
+      )
+      .setColor(theme)
+        await inter.user.send({content: newDoc.key, embeds: [embed], ephemeral: true})
+          .then(msg => inter.followUp({content: emojis.check+' Your access key has been sent via direct message'}))
+          .catch(async err => {
+          console.log(err)
+          inter.followUp({content: emojis.warning+' Unable to send access key via direct message\n```diff\n-'+err+'```'})
+          await guildModel.deleteOne({key: newDoc.key})
+        })
       }
-      await displayHelp('desc')
-      let filter = i => i.user.id === inter.user.id && i.message.id === botMsg.id;
-      let collector = botMsg.channel.createMessageComponentCollector({ filter, time: 300000 });
-    
-      collector.on('collect', async i => {
-        if (current !== i.customId) {
-          let lb = await displayHelp(i.customId)
-          for (let inter in row.components) {
-            let comp = row.components[inter]
-            comp.customId && comp.customId === i.customId ? comp.setStyle('DANGER') : comp.setStyle('SECONDARY')
-          }
-          i.update({embeds: [lb], components: [row]});
-          current = i.customId
+    else if (cname === 'unregister') {
+        let options = inter.options._hoistedOptions
+        //
+        let key = options.find(a => a.name === 'key')
+
+        let doc = await guildModel.findOne({key: key.value})
+        let guild = await getGuild(doc.id)
+        if (doc) {
+          let embed = new MessageEmbed()
+          .setDescription(emojis.off+' Your guild is flagged for termination')
+          .setColor(colors.red)
+          .addFields(
+            {name: "Guild", value: "Guild ID `"+guild?.id+"`\nGuild Name `"+guild?.name+"`"},
+            {name: "Registered Users", value: doc.users.length.toString(), inline: true},
+            {name: "Author", value: '<@'+doc.author+'>', inline: true},
+            {name: "Access Key", value: '```diff\n- '+doc.key.substr(0, doc.key.length-20)+'```'},
+          )
+
+          let row = new MessageActionRow().addComponents(
+            new MessageButton().setCustomId('unregisPrompt-'+inter.user.id).setStyle('DANGER').setLabel("Unregister").setEmoji(emojis.warning),
+          );
+          await inter.reply({content: doc.id, embeds: [embed], components: [row], ephemeral: true})
         } else {
-          i.deferUpdate();
+          await inter.reply({content: emojis.warning+' Invalid access key'})
         }
-      });
-      collector.on('end', collected => {
-        for (let i in row.components) {
-          row.components[i].setDisabled(true);
-        }
-        botMsg.edit({ components: [row] });
-      })
-    }
-    else if (cname === 'i_got_termed') {
-      let ch = await getChannel(config.channels.templates)
-      let foundMsg = await ch.messages.fetch('1391422472942911488')
-      await inter.reply(foundMsg.content)
-    }
+      }
+
+      // Config
     else if (cname === 'unverify_on_leave') {
       let options = inter.options._hoistedOptions
       //
@@ -469,320 +491,344 @@ client.on('interactionCreate', async inter => {
       if (doc) {
         doc.unverifyOnLeave = enabled.value
         await doc.save()
-        await inter.reply({content: "` Enabled ` : "+enabled.value.toString().toUpperCase()})
+        let reply = ""
+        if (doc.unverifyOnLeave) reply = emojis.on+" Unverify on leave is now **enabled**"
+        else emojis.off+" Unverify on leave is now **disabled**"
+        
+        await inter.reply({content: reply})
       } else {
         await inter.reply({content: emojis.warning+' Invalid access key'})
-      }
-    }
-    else if (cname === 'register') {
-      if (!await getPerms(inter.member,2)) return inter.reply({content: emojis.warning+" You are not on the whitelist"});
-      let options = inter.options._hoistedOptions
-      //
-      let guildId = options.find(a => a.name === 'guild_id')
-      let guild = await getGuild(guildId.value)
-      if (!guild) return inter.reply({content: emojis.warning+' Cannot find guild. Make sure that the bot is on the server that you wish to register'})
-      if (!await guildPerms(await getMember(inter.user.id,guild),["MANAGE_GUILD"])) return inter.reply({content: emojis.warning+' You must have the **MANAGE SERVER** permission in the server that you want to register'})
-      let doc = await guildModel.findOne({id: guild.id})
-      if (doc) return inter.reply({content: emojis.warning+' This guild was already registered'})
-      let docAuthor = await guildModel.findOne({author: inter.user.id})
-      if (docAuthor && inter.user.id !== '497918770187075595') return inter.reply({content: emojis.warning+' You are limited to register 1 guild per user'})
-      let newDoc = new guildModel(guildSchema)
-      newDoc.id = guild.id
-      newDoc.key = makeCode(30)
-      newDoc.author = inter.user.id
-      newDoc.maxTokens = config.guildMaxtokens
-      newDoc.verifiedRole = "Backup"
-      await newDoc.save()
-      
-      await inter.reply({content: emojis.on+" Your guild was registered"})
-      
-      let embed = new MessageEmbed()
-      .addFields(
-        {name: "Generated Key", value: "This key was generated for the first time. Make sure you save it."},
-        {name: "Data", value: "Guild ID `"+guild.id+"`\nGuild Name `"+guild.name+"`"}
-      )
-      .setColor(theme)
-      
-      await inter.user.send({content: newDoc.key, embeds: [embed], ephemeral: true})
-        .then(msg => inter.followUp({content: emojis.check+' Your access key has been sent via direct message'}))
-        .catch(async err => {
-        console.log(err)
-        inter.followUp({content: emojis.warning+' Unable to send access key via direct message\n```diff\n-'+err+'```'})
-        await guildModel.deleteOne({key: newDoc.key})
-      })
-    }
-    else if (cname === 'unregister') {
-      let options = inter.options._hoistedOptions
-      //
-      let key = options.find(a => a.name === 'key')
-      
-      let doc = await guildModel.findOne({key: key.value})
-      let guild = await getGuild(doc.id)
-      if (doc) {
-        let embed = new MessageEmbed()
-        .setDescription(emojis.off+' Your guild is flagged for termination')
-        .setColor(colors.red)
-        .addFields(
-          {name: "Guild", value: "Guild ID `"+guild?.id+"`\nGuild Name `"+guild?.name+"`"},
-          {name: "Registered Users", value: doc.users.length.toString(), inline: true},
-          {name: "Author", value: '<@'+doc.author+'>', inline: true},
-          {name: "Access Key", value: '```diff\n- '+doc.key.substr(0, doc.key.length-20)+'```'},
-        )
-        
-        let row = new MessageActionRow().addComponents(
-          new MessageButton().setCustomId('unregisPrompt-'+inter.user.id).setStyle('DANGER').setLabel("Unregister").setEmoji(emojis.warning),
-        );
-        await inter.reply({content: doc.id, embeds: [embed], components: [row], ephemeral: true})
-      } else {
-        await inter.reply({content: emojis.warning+' Invalid access key'})
-      }
-    }
-    else if (cname === 'joinall') {
-      let options = inter.options._hoistedOptions
-      //
-      let key = options.find(a => a.name === 'key')
-      let reason = options.find(a => a.name === 'message')
-      let guildId = options.find(a => a.name === 'target_server_id')
-      let guild = await getGuild(guildId.value);
-      if (!guild) return inter.reply({content: emojis.warning+' Invalid guild ID was provided', ephemeral: true})
-      let doc = await guildModel.findOne({key: key?.value})
-      if (!doc) doc = await guildModel.findOne({author: inter.user.id})
-      if (!doc) return inter.reply({content: emojis.warning+' Invalid key was provided', ephemeral: true})
-      if (doc.users.length === 0) return inter.reply({content: emojis.warning+' No users have yet verified to your server', ephemeral: true})
-      
-      
-      if (joinDebounce) return inter.reply(emojis.warning+" Bot is currently busy with other `joinall` commands. Please try again later.")
-        joinDebounce = true
-      
-      let failed = 0
-      let success = 0
-      let already = 0
-      let errors = ""
-      let toDelete = []
-      await inter.reply({content: emojis.loading+" Joining "+doc.users.length+" users to your new guild **("+guild.name+")**", ephemeral: true})
-      const usersDataContent = `['${doc.users.join("', '")}'];`;
-      await safeSend(inter.channel,"**Initial Report Data (Important)**\n\n"+usersDataContent)
-      
-      let ch = await getChannel(config.channels.templates)
-      let foundMsg = await ch.messages.fetch('1261206750422503434')
-      let msgContent = ''+foundMsg.content
-      for (let i in doc.users) {
-        let userId = doc.users[i]
-        try {
-          let user = await getUser(userId);
-          console.log(user.id)
-          if (user) {
-          let member = await getMember(user.id,guild)
-          if (member) already++
-          else {
-            let data = await tokenModel.findOne({id: userId})
-            if (data) {
-              if (user) await guild.members.add(user,{accessToken: data.access_token})
-                .then(suc => {
-                success++
-                
-                let unverify = new MessageActionRow().addComponents(
-                  new MessageButton().setCustomId('unverifPrompt-'+doc.id).setStyle('SECONDARY').setLabel('Unverify'),
-                );
-                
-                let embed = new MessageEmbed()
-                .setTitle("🔒 You were joined to a server!")
-                .setDescription(
-                  "I joined you on a server (**" + guild.name + "**) on your behalf as directed by the server owner.\n\n" +
-                  "Feel free to ignore this message if you think that this is appropriate. You can **unverify** yourself at any time."
-                )
-                .addFields(
-                  {name: "Author", value: "<@"+inter.user.id+">"},
-                  {name: "Message", value: reason.value},
-                )
-                .setColor(colors.red)
-                .setFooter({text: "Thank you for your attention"})
-                .setTimestamp();
-                msgContent = msgContent.replace('{server}',guild.name)
-                msgContent = msgContent.replace('{user}','<@'+doc.author+'>')
-                msgContent = msgContent.replace('{msg}',reason.value)
-                user.send({
-                  content: msgContent,
-                  components: [unverify]
-                });
-              })
-                .catch(err => {
-                if (err.toString().includes('Invalid OAuth2') || err.toString().includes('Unknown User')) {
-                  toDelete.push(i)
-                  failed++
-                } else {
-                  errors += "Fetch failed: "+userId+"\n"+err+"\n\n"
-                  //inter.channel.send({content: "Fetch failed: "+userId+"\n"+err})
-                }
-              })
-            } else {
-              toDelete.push(i)
-              errors += 'No data failed '+userId+"\n\n"
-              console.log('No data failed '+userId)
-              failed++
-            }
-          }
-        } else {
-          toDelete.push(i)
-          await tokenModel.deleteOne({id: userId})
-          errors += 'user not found '+userId+"\n\n"
-          console.log('user not found '+userId)
-          failed++
-        }
-        } catch(err) {
-          //toDelete.push(i)
-          //await tokenModel.deleteOne({id: userId})
-          errors += 'Code error on '+userId+': '+err+"\n\n"
-          console.log(err)
-        }
-      }
-      
-      const errorsData = fs.writeFileSync('errors-data.txt', errors, 'utf8');
-      toDelete.sort((a, b) => b-a);
-      for (let i in toDelete) {
-        let index = toDelete[i]
-        doc.users.splice(index,1)
-      }
-      joinDebounce = false
-      await inter.channel.send({content: emojis.check+' Success: '+success+'\n'+emojis.x+' Deauthorized: '+failed+'\n'+emojis.on+' Already in Server: '+already+'\n🔑 Total Tokens: '+doc.users.length})
-      await safeSend(inter.channel,"**Errors Report**\n\n"+errorsData)
-      await doc.save();
-    }
-    else if (cname === 'join') {
-      let options = inter.options._hoistedOptions
-      //
-      let key = options.find(a => a.name === 'key')
-      let reason = options.find(a => a.name === 'message')
-      let user = options.find(a => a.name === 'target_user')
-      let userId = options.find(a => a.name === 'target_user_id')
-      let guildId = options.find(a => a.name === 'target_server_id')
-      
-      !user ? userId ? user = await getUser(userId.value) : user = null : user = user.user
-      if (!user) return inter.reply({content: emojis.warning+' Invalid user ID', ephemeral: true})
-      try {
-        let guild = await getGuild(guildId.value)
-        let doc = await guildModel.findOne({key: key?.value})
-        
-        if (!doc) doc = await guildModel.findOne({author: inter.user.id})
-        if (!doc) return inter.reply({content: emojis.warning+' Invalid access key'})
-        if (!guild) return inter.reply({content: emojis.warning+' Invalid guild ID', ephemeral: true})
-        let existingUser = doc.users.find(u => u === user.id)
-        if (!existingUser) await inter.reply({content: emojis.x+' **'+user.tag+'** is not verified on '+guild.name, ephemeral: true})
-        await inter.reply({content: emojis.loading+' Joining **'+user.tag+'** to '+guild.name, ephemeral: true})
-        let data = await tokenModel.findOne({id: user.id})
-        let error = false
-        
-        let ch = await getChannel(config.channels.templates)
-        let foundMsg = await ch.messages.fetch('1261206750422503434')
-        let msgContent = ''+foundMsg.content
-        let joinMem = await guild.members.add(user,{accessToken: data.access_token}).catch(err => {
-          console.log(err)
-          error = true
-          inter.followUp({content: emojis.warning+" Failed to join **"+user.tag+"** to "+guild.name+'\n```diff\n-'+err+'```'})
-        }).then(msg => {
-          if (!error) {
-            
-            inter.followUp({content: emojis.on+" Successfully joined **"+user.tag+"** to "+guild.name})
-            
-            let unverify = new MessageActionRow().addComponents(
-              new MessageButton().setCustomId('unverifPrompt-'+doc.id).setStyle('SECONDARY').setLabel('Unverify'),
-            );
-            
-            msgContent = msgContent.replace('{server}',guild.name)
-            msgContent = msgContent.replace('{user}','<@'+doc.author+'>')
-            msgContent = msgContent.replace('{msg}',reason.value)
-            
-            user.send({
-              content: msgContent,
-              components: [unverify]
-            });
-        }
-        })
-      }
-      catch (err) {
-        console.log(err)
-        inter.channel.send({content: emojis.warning+" Unexpected error occurred\n```diff\n- "+err+"```"})
       }
     }
     else if (cname === 'status') {
-      if (!await guildPerms(await getMember(inter.user.id,inter.guild),["MANAGE_GUILD"])) return inter.reply({content: emojis.warning+' You must have the **MANAGE SERVER** permission to use this command.'})
-      let options = inter.options._hoistedOptions
-      //
-      let unverify_button = options.find(a => a.name === 'unverify_button')
-      let guildId = options.find(a => a.name === 'guild_id')
+        let options = inter.options._hoistedOptions
+        //
+        let key = options.find(a => a.name === 'key')
+
+        let doc = await guildModel.findOne({key: key?.value})
+        if (!doc) doc = await guildModel.findOne({author: inter.user.id})
+        if (!doc) return inter.reply({content: emojis.warning+' Invalid access key'})
+        let guild = await getGuild(doc.id)
       
-      let doc = await guildModel.findOne({id: guildId ? guildId.value : inter.guild.id})
-      let guild = guildId ? await getGuild(guildId.value) : inter.guild
-      if (!doc) return inter.reply({content: emojis.warning+' Unergistered guild ID'})
-      let userIndex = doc.users.indexOf(inter.user.id) + 1
-      let embed = new MessageEmbed()
-      .setColor(colors.none)
-      .setTitle(`${guild?.name}`)
-      .setThumbnail(guild?.iconURL())
-      .addFields(
-        { name: "Verified Users", value: "```diff\n+ "+doc.users.length+"```", inline: true },
-        { name: "Author", value: `<@${doc.author}>`, inline: true },
-        { name: "Verified Role", value: doc.verifiedRole !== "Backup" ? `<@&${doc.verifiedRole}>` : `${doc.verifiedRole} *(default)*`, inline: true },
-        { name: "Unverify on Leave", value: doc.unverifyOnLeave ? emojis.check : emojis.x, inline: true },
-        { name: "Access Key", value: `\`\`\`yaml\n${doc.key.substr(0, doc.key.length - 20)}...\`\`\`` },
-      )
-      .setFooter({text: doc.users.length+"/"+doc.maxTokens+" verified members"})
-      let row = null
-      let url = encodeURI('https://discord.com/oauth2/authorize?client_id='+client.user.id+'&response_type=code&redirect_uri='+process.env.live+'&scope=guilds.join+identify&state='+doc.id+'-'+config.version)
-      if (unverify_button?.value === 'hide') {
-        row = new MessageActionRow().addComponents(
-        new MessageButton().setURL(url).setStyle('LINK').setLabel("Verify"),
-          new MessageButton().setCustomId('unverifPrompt-'+doc.id).setStyle('SECONDARY').setLabel("Unverify"),
-      );
-      } else {
-        row = new MessageActionRow().addComponents(
-          new MessageButton().setURL(url).setStyle('LINK').setLabel("Verify"),
-          new MessageButton().setCustomId('unverifPrompt-'+doc.id).setStyle('SECONDARY').setLabel("Unverify"),
-        );
+        let embed = new MessageEmbed()
+        .setColor(colors.none)
+        .setTitle(`${guild?.name}`)
+        .setThumbnail(guild?.iconURL())
+        .setDescription("Run /restore_members to see instructions how to restore members on new server")
+        .addFields(
+          { name: "Server Information", 
+           value: 
+             emojis.on+" Verified Users: "+doc.users.length+"\n"+
+             emojis.on+" Author: <@"+doc.author+">\n"+
+             (doc.verifiedRole !== "Backup" ? emojis.on+" Verified Role: <@&"+doc.verifiedRole+">\n" : emojis.off+" Verified Role: </setrole:1248659549066367069>\n")+
+             (doc.unverifyOnLeave ? emojis.on+" UnverifyOnLeave: Enabled" : emojis.off+" </unverify_on_leave:1391426611446026361>: Disabled")
+           , inline: true },
+          { name: "Access Key", value: `\`\`\`yaml\n${doc.key}\`\`\`` },
+        )
+      .setFooter({text: "Do not share your access key with anyone!"})
+        await inter.reply({embeds: [embed], ephemeral: true})
       }
-      
-      await inter.reply({embeds: [embed], components: [row]})
+    else if (cname === 'setrole') {
+       let options = inter.options._hoistedOptions
+       let role = options.find(a => a.name === 'role')
+       let key = options.find(a => a.name === 'key')
+       let doc = await guildModel.findOne({key: key.value})
+       await inter.reply({content: emojis.loading+" Changing role", ephemeral: true})
+       if (!doc) return inter.editReply({content: emojis.warning+' Invalid Key', ephemeral: true})
+
+        let oldLimit = doc.verifiedRole
+        doc.verifiedRole = role.role.id
+        await doc.save()
+
+        let embed = new MessageEmbed()
+        .setDescription(emojis.on+" Successfully changed verified role from "+(oldLimit !== "Backup" ? "<@&"+oldLimit+">" : oldLimit)+" to **"+role.role.toString()+"**")
+        .setColor(theme)
+
+        await inter.followUp({embeds: [embed]})
+    }
+
+      // Backup
+    else if (cname === 'restore_members') {
+      let ch = await getChannel(config.channels.templates)
+      let foundMsg = await ch.messages.fetch('1391422472942911488')
+      await inter.reply(foundMsg.content)
     }
     else if (cname === 'transfer') {
-      let options = inter.options._hoistedOptions
-      //
-      let newServer = options.find(a => a.name === 'new_server_id')
-      let key = options.find(a => a.name === 'key')
-      let doc = await guildModel.findOne({key: key.value})
-      
-      await inter.reply({content: emojis.loading+' Transferring data. Please wait.', ephemeral: true})
-      
-      let guild = newServer ? await getGuild(newServer.value) : inter.guild
-      if (!doc || !guild) return inter.channel.send({content: emojis.warning+' Invalid guild/key'})
-      let existingGuild = await guildModel.findOne({id: guild.id})
-      if (existingGuild && existingGuild.id !== doc.id) return inter.channel.send({content: emojis.warning+' Cannot transfer to an already registered guild.'})
-      let embed = new MessageEmbed()
-      .addFields(
-        { name: 'Guild Transfer', value: emojis.off+' OLD\nID `'+doc.id+'`\n\n'+emojis.on+' NEW\nID `'+newServer.value+'`\nName **'+guild.name+'**'},
-        { name: 'Author Transfer', value: emojis.off+' OLD\nID `'+doc.author+'`\n\n'+emojis.on+' NEW\nID `'+inter.user.id+'`\nPing '+inter.user.toString()},
-      )
-      .setColor(colors.blue)
-      
-      doc.id = guild.id
-      doc.author = inter.user.id
-      doc.key = makeCode(30)
-      await doc.save()
-      await inter.channel.send({content: emojis.check+' Data Transferred', embeds: [embed]})
-      
-      let embed2 = new MessageEmbed()
-      .addFields(
-        {name: "Generated Key", value: "This key was generated for the first time. Make sure you save it."},
-        {name: "Data", value: "Guild ID `"+guild.id+"`\nGuild Name `"+guild.name+"`"}
-      )
-      .setColor(theme)
-      
-      await inter.user.send({content: doc.key, embeds: [embed2]})
-        .then(msg => inter.followUp({content: emojis.check+' Your new access key has been sent via direct message'}))
-        .catch(async err => {
-        console.log(err)
-        inter.followUp({content: emojis.warning+' Unable to send access key via direct message. Sending here...\n'+doc.key, embeds: [embed2], ephemeral: true})
-      })
+        let options = inter.options._hoistedOptions
+        //
+        let newServer = options.find(a => a.name === 'new_server_id')
+        let key = options.find(a => a.name === 'key')
+        let doc = await guildModel.findOne({key: key.value})
+
+        await inter.reply({content: emojis.loading+' Transferring data. Please wait!', ephemeral: true})
+
+        let guild = newServer ? await getGuild(newServer.value) : inter.guild
+        if (!doc || !guild) return inter.channel.send({content: emojis.warning+' Invalid guild/key'})
+        let existingGuild = await guildModel.findOne({id: guild.id})
+        if (existingGuild && existingGuild.id !== doc.id) return inter.channel.send({content: emojis.warning+' Cannot transfer to an already registered guild.'})
+        let embed = new MessageEmbed()
+        .addFields(
+          { name: 'Guild Transfer', value: emojis.off+' OLD\nID `'+doc.id+'`\n\n'+emojis.on+' NEW\nID `'+newServer.value+'`\nName **'+guild.name+'**'},
+          { name: 'Author Transfer', value: emojis.off+' OLD\nID `'+doc.author+'`\n\n'+emojis.on+' NEW\nID `'+inter.user.id+'`\nPing '+inter.user.toString()},
+        )
+        .setColor(colors.blue)
+
+        doc.id = guild.id
+        doc.author = inter.user.id
+        doc.key = makeCode(30)
+        await doc.save()
+        await inter.channel.send({content: emojis.check+' Data Transferred', embeds: [embed]})
+
+        let embed2 = new MessageEmbed()
+        .addFields(
+          {name: "Generated Key", value: "Your old key was deleted and a new key was generated. Make sure you save it externally!"},
+          {name: "Data", value: "Guild ID `"+guild.id+"`\nGuild Name `"+guild.name+"`"}
+        )
+        .setColor(theme)
+
+        await inter.user.send({content: doc.key, embeds: [embed2]})
+          .then(msg => inter.followUp({content: emojis.check+' Your new access key has been sent via direct message'}))
+          .catch(async err => {
+          console.log(err)
+          inter.followUp({content: emojis.warning+' Unable to send access key via direct message. Sending here...\n'+doc.key, embeds: [embed2], ephemeral: true})
+        })
+      }
+    else if (cname === 'joinall') {
+      let options = inter.options._hoistedOptions;
+      let key = options.find(a => a.name === 'key');
+      let reason = options.find(a => a.name === 'message');
+      let guildId = options.find(a => a.name === 'target_server_id');
+      let guild = await getGuild(guildId.value);
+
+      if (!guild) return inter.reply({ content: emojis.warning + ' Invalid guild ID was provided', ephemeral: true });
+
+      let doc = await guildModel.findOne({ key: key.value });
+      if (!doc) return inter.reply({ content: emojis.warning + ' Invalid access key', ephemeral: true });
+      if (doc.users.length === 0) return inter.reply({ content: emojis.warning + ' No users have yet verified to your server', ephemeral: true });
+
+      if (joinDebounce) return inter.reply(emojis.warning + " Bot is currently busy with other `joinall` commands. Please try again later.");
+      joinDebounce = true;
+
+      let failed = 0;
+      let success = 0;
+      let already = 0;
+      let errors = "";
+      let toDelete = [];
+
+      await inter.reply({ content: emojis.loading + " Joining " + doc.users.length + " users to your new guild **(" + guild.name + ")**", ephemeral: true });
+      const usersDataContent = `['${doc.users.join("', '")}'];`;
+      await safeSend(inter.channel, "**Initial Report Data**\n\n" + usersDataContent);
+
+      let ch = await getChannel(config.channels.templates);
+      let foundMsg = await ch.messages.fetch('1261206750422503434');
+      let msgContent = '' + foundMsg.content;
+
+      for (let i in doc.users) {
+        let userId = doc.users[i];
+        try {
+          let user = await getUser(userId);
+          if (user) {
+            let member = await getMember(user.id, guild);
+            if (member) {
+              already++;
+            } else {
+              let data = await tokenModel.findOne({ id: userId });
+              if (data) {
+                let result = await refreshOneToken(data);
+                if (!result.success) {
+                  toDelete.push(i);
+                  failed++;
+                  errors += `Token refresh failed for ${userId}: ${result.error || 'unknown reason'}\n\n`;
+                  continue;
+                }
+
+                const tokenToUse = result.access_token;
+                await guild.members.add(user, { accessToken: tokenToUse })
+                  .then(suc => {
+                    success++;
+
+                    let unverify = new MessageActionRow().addComponents(
+                      new MessageButton().setCustomId('unverifPrompt-' + doc.id).setStyle('SECONDARY').setLabel('Unverify'),
+                    );
+
+                    let finalMsg = msgContent.replace('{server}', guild.name).replace('{user}', '<@' + doc.author + '>').replace('{msg}', reason.value);
+
+                    user.send({
+                      content: finalMsg,
+                      components: [unverify]
+                    });
+                  })
+                  .catch(err => {
+                    if (err.toString().includes('Invalid OAuth2') || err.toString().includes('Unknown User')) {
+                      toDelete.push(i);
+                      failed++;
+                    } else {
+                      errors += `Fetch failed: ${userId}\n${err}\n\n`;
+                    }
+                  });
+              } else {
+                toDelete.push(i);
+                errors += 'No token data found for ' + userId + "\n\n";
+                failed++;
+              }
+            }
+          } else {
+            toDelete.push(i);
+            await tokenModel.deleteOne({ id: userId });
+            errors += 'User not found ' + userId + "\n\n";
+            failed++;
+          }
+        } catch (err) {
+          errors += 'Code error on ' + userId + ': ' + err + "\n\n";
+        }
+      }
+
+      const errorsData = fs.writeFileSync('errors-data.txt', errors, 'utf8');
+      toDelete.sort((a, b) => b - a);
+      for (let i in toDelete) {
+        let index = toDelete[i];
+        doc.users.splice(index, 1);
+      }
+      joinDebounce = false;
+      await inter.channel.send({ content: emojis.check + ' Success: ' + success + '\n' + emojis.x + ' Deauthorized: ' + failed + '\n' + emojis.on + ' Already in Server: ' + already + '\n🔑 Total Tokens: ' + doc.users.length });
+      await safeSend(inter.channel, "**Errors Report**\n\n" + errorsData);
+      await doc.save();
     }
+    else if (cname === 'join') {
+        let options = inter.options._hoistedOptions;
+        let key = options.find(a => a.name === 'key');
+        let reason = options.find(a => a.name === 'message');
+        let user = options.find(a => a.name === 'target_user');
+        let userId = options.find(a => a.name === 'target_user_id');
+        let guildId = options.find(a => a.name === 'target_server_id');
+
+        !user ? userId ? user = await getUser(userId.value) : user = null : user = user.user;
+        if (!user) return inter.reply({ content: emojis.warning + ' Invalid user ID', ephemeral: true });
+
+        try {
+          let guild = await getGuild(guildId.value);
+          let doc = await guildModel.findOne({ key: key.value });
+
+          if (!doc) return inter.reply({ content: emojis.warning + ' Invalid access key' });
+          if (!guild) return inter.reply({ content: emojis.warning + ' Invalid guild ID', ephemeral: true });
+
+          let existingUser = doc.users.find(u => u === user.id);
+          if (!existingUser) return await inter.reply({ content: emojis.x + ' **' + user.tag + '** is not verified on ' + guild.name, ephemeral: true });
+
+          await inter.reply({ content: emojis.loading + ' Joining **' + user.tag + '** to ' + guild.name, ephemeral: true });
+          let data = await tokenModel.findOne({ id: user.id });
+          let error = false;
+
+          let ch = await getChannel(config.channels.templates);
+          let foundMsg = await ch.messages.fetch('1261206750422503434');
+          let msgContent = '' + foundMsg.content;
+
+          // Refresh token if needed
+          let result = await refreshOneToken(data);
+          if (!result.success) {
+            return inter.followUp({ content: emojis.warning + " Failed to refresh token for **"+user.tag+"**\n\n\```diff\n- result.error```" });
+          }
+
+          let tokenToUse = result.access_token;
+
+          await guild.members.add(user, { accessToken: tokenToUse }).catch(err => {
+            console.log(err);
+            error = true;
+            inter.followUp({ content: emojis.warning + " Failed to join **" + user.tag + "** to " + guild.name + '\n```diff\n-' + err + '```' });
+          }).then(msg => {
+            if (!error) {
+              inter.followUp({ content: emojis.on + " Successfully joined **" + user.tag + "** to " + guild.name });
+
+              let unverify = new MessageActionRow().addComponents(
+                new MessageButton().setCustomId('unverifPrompt-' + doc.id).setStyle('SECONDARY').setLabel('Unverify'),
+              );
+
+              msgContent = msgContent.replace('{server}', guild.name);
+              msgContent = msgContent.replace('{user}', '<@' + doc.author + '>');
+              msgContent = msgContent.replace('{msg}', reason.value);
+
+              user.send({
+                content: msgContent,
+                components: [unverify]
+              });
+            }
+          });
+        } catch (err) {
+          console.log(err);
+          inter.channel.send({ content: emojis.warning + " Unexpected error occurred\n```diff\n- " + err + "```" });
+        }
+      }
+      
+      // Misc
+    else if (cname === 'addroles') {
+        let options = inter.options._hoistedOptions
+        //
+        let key = options.find(a => a.name === 'key')
+
+        let doc = await guildModel.findOne({key: key.value})
+        if (!doc) return inter.reply({content: emojis.warning+' Invalid Key', ephemeral: true})
+        if (doc.users.length === 0) return inter.reply({content: emojis.warning+' No users have yet verified to your server', ephemeral: true})
+        let failed = 0
+        let success = 0
+        let already = 0
+        let role = await getRole(doc.verifiedRole,inter.guild)
+        if (!role) await inter.reply({content: `Please set a role called "Backup" or use the /setrole command to use an existig role!`})
+        await inter.reply({content: emojis.loading+" Adding **backup** role to "+doc.users.length+" users", ephemeral: true})
+        for (let i in doc.users) {
+          let userId = doc.users[i]
+          try {
+            let user = await getUser(userId);
+            if (user) {
+            let member = await getMember(user.id,inter.guild)
+            if (member) {
+              if (await hasRole(member,[role.id])) already++ 
+              else {
+                let notAdded = await addRole(member,[role.id],inter.guild)
+                if (notAdded) failed++
+                else success++
+              }
+            } else {
+              failed++
+            }
+          }
+          } catch(err) {
+            await tokenModel.deleteOne({id: userId})
+            console.log('Code error: '+err)
+            failed++
+          }
+          console.log(success+', '+already+', '+failed)
+        }
+
+        await inter.channel.send({content: emojis.check+' Added: '+success+'\n'+emojis.x+' Failed: '+failed+'\n'+emojis.on+' Already Added: '+already})
+      }
+    else if (cname === 'verify_link') {
+      //
+      let doc = await guildModel.findOne({id: inter.guild.id})
+      if (!doc) return inter.reply({content: emojis.warning+' Unergistered guild ID'})
+      let guild = await getGuild(doc.id)
+      
+      let embed = new MessageEmbed()
+        .setColor(colors.none)
+        .setTitle(`${guild?.name}`)
+        .setThumbnail(guild?.iconURL())
+        .addFields(
+          { name: "Server Information", 
+           value: 
+             emojis.on+" Verified Users: "+doc.users.length+"\n"+
+             (doc.verifiedRole !== "Backup" ? emojis.on+" Verified Role: <@&"+doc.verifiedRole+">\n" : emojis.off+" Verified Role: None\n")+
+             (doc.unverifyOnLeave ? emojis.on+" UnverifyOnLeave: Enabled" : emojis.off+" UnverifyOnLeave: Disabled")
+           , inline: true },
+        )
+      .setFooter({text: "Click the button below to verify"})
+      
+        let row = null
+        let url = encodeURI('https://discord.com/oauth2/authorize?client_id='+client.user.id+'&response_type=code&redirect_uri='+process.env.live+'&scope=guilds.join+identify&state='+doc.id+'-version'+config.version)
+      row = new MessageActionRow().addComponents(
+        new MessageButton().setURL(url).setStyle('LINK').setLabel("Verify"),
+      );
+
+        await inter.reply({embeds: [embed], components: [row]})
+      }
     else if (cname === 'merge') {
       if (!await getPerms(inter.member,5)) return inter.reply({content: emojis.warning+" Insufficient Permission"});
       let options = inter.options._hoistedOptions
@@ -832,104 +878,6 @@ client.on('interactionCreate', async inter => {
       await doc.save()
       inter.reply({content: emojis.on+" Successfully changed max tokens from **"+oldLimit+"** to **"+limit.value+"**"})
     }
-    else if (cname === 'setrole') {
-     let options = inter.options._hoistedOptions
-     let role = options.find(a => a.name === 'role')
-     let key = options.find(a => a.name === 'key')
-     let doc = await guildModel.findOne({key: key.value})
-     await inter.reply({content: emojis.loading+" Changing role", ephemeral: true})
-     if (!doc) return inter.editReply({content: emojis.warning+' Invalid Key', ephemeral: true})
-      
-      let oldLimit = doc.verifiedRole
-      doc.verifiedRole = role.role.id
-      await doc.save()
-      
-      let embed = new MessageEmbed()
-      .setDescription(emojis.on+" Successfully changed verified role from "+(oldLimit !== "Backup" ? "<@&"+oldLimit+">" : oldLimit)+" to **"+role.role.toString()+"**")
-      .setColor(theme)
-      
-      await inter.followUp({embeds: [embed]})
-    }
-    else if (cname === 'check') {
-     let options = inter.options._hoistedOptions
-     let user = options.find(a => a.name === 'user')
-     let doc = await guildModel.findOne({id: inter.guild.id})
-     
-     if (!doc) return inter.reply({content: emojis.warning+' Guild is not registered!', ephemeral: true})
-      let foundUser = doc.users.find(u => u === user.user.id)
-      
-      if (foundUser) await inter.reply({content: emojis.check+" "+user.user.username+" is verified."})
-      else await inter.reply({content: emojis.x+" "+user.user.username+" is not verified."})
-    }
-    else if (cname === 'addroles') {
-      let options = inter.options._hoistedOptions
-      //
-      let key = options.find(a => a.name === 'key')
-      
-      let doc = await guildModel.findOne({key: key.value})
-      if (!doc) return inter.reply({content: emojis.warning+' Invalid Key', ephemeral: true})
-      if (doc.users.length === 0) return inter.reply({content: emojis.warning+' No users have yet verified to your server', ephemeral: true})
-      let failed = 0
-      let success = 0
-      let already = 0
-      let role = await getRole(doc.verifiedRole,inter.guild)
-      if (!role) await inter.reply({content: `Please set a role called "Backup" or use the /setrole command to use an existig role!`})
-      await inter.reply({content: emojis.loading+" Adding **backup** role to "+doc.users.length+" users", ephemeral: true})
-      for (let i in doc.users) {
-        let userId = doc.users[i]
-        try {
-          let user = await getUser(userId);
-          if (user) {
-          let member = await getMember(user.id,inter.guild)
-          if (member) {
-            if (await hasRole(member,[role.id])) already++ 
-            else {
-              let notAdded = await addRole(member,[role.id],inter.guild)
-              if (notAdded) failed++
-              else success++
-            }
-          } else {
-            failed++
-          }
-        }
-        } catch(err) {
-          await tokenModel.deleteOne({id: userId})
-          console.log('Code error: '+err)
-          failed++
-        }
-        console.log(success+', '+already+', '+failed)
-      }
-
-      await inter.channel.send({content: emojis.check+' Added: '+success+'\n'+emojis.x+' Failed: '+failed+'\n'+emojis.on+' Already Added: '+already})
-    }
-    else if (cname === 'leaderboard') {
-      if (!await getPerms(inter.member,2)) return inter.reply({content: emojis.warning+" You are not on the whitelist"});
-      await inter.deferReply();
-      let guilds = await guildModel.find()
-      let list = []
-      let topTen = ""
-      let count = 0
-      for (let i in guilds) {
-        count++
-        let guild = guilds[i]
-        list.push({id: guild.id, users: guild.users.length, author: guild.author})
-      }
-      list.sort((a, b) => (b.users - a.users))
-      let indexCount = 0
-      for (let i in list) {
-        let data = list[i]
-        let guild = await getGuild(data.id)
-        if (guild && indexCount < 10) {
-          indexCount++
-          topTen += '**'+indexCount+'. '+guild.name+'\n**Verified Users: '+data.users+'\nAuthor: <@'+data.author+">\nID: "+data.id+"\n\n"
-        }
-      }
-      let embed = new MessageEmbed()
-      .setTitle("Top Guilds")
-      .setDescription(topTen)
-      .setColor(colors.blue)
-      await inter.editReply({embeds: [embed]})
-  }
   }
   //BUTTONS
   else if (inter.isButton() || inter.isSelectMenu()) {
@@ -1030,11 +978,11 @@ function respond(res, data) {
 }
 app.get('/backup', async function (req, res) {
   if (!req.query.state) return respond(res, {text: "Unknown server ID", color: '#ff4b4b'})
-  if (!req.query.state.includes('-'+config.version)) return respond(res, {text: "Outdated Link", color: '#ff4b4b'})
-  let foundGuildId = req.query.state.replace('-'+config.version,'')
+  if (!req.query.state.includes('-version'+config.version)) return respond(res, {text: "Version Mismatch", color: '#ff4b4b'})
+  let foundGuildId = req.query.state.replace('-version'+config.version,'')
   try {
     let guild = await getGuild(foundGuildId)
-    console.log('received')
+    
     let data_1 = new URLSearchParams();
     data_1.append('client_id', client.user.id);
     data_1.append('client_secret', process.env.clientSecret);
@@ -1048,11 +996,11 @@ app.get('/backup', async function (req, res) {
     let headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
     }
-    //fetch token
+    // Fetch token
     let response = await fetch('https://discord.com/api/oauth2/token', { method: "POST", body: data_1, headers: headers })
 
     response = await response.json();
-    //fetch user
+    // Fetch user
     let user = await fetch('https://discord.com/api/users/@me',{ headers: {'authorization': `Bearer ${response.access_token}`}})
     user.status !== 200 ? console.log(user.status+' - '+user.statusText) : null
     user = await user.json();
@@ -1063,14 +1011,14 @@ app.get('/backup', async function (req, res) {
       print(user)
       return
     }
-    //fetch model
+    // Fetch model
     if (!guildModel) return respond(res, {text: "VALCORE is waking up.", text2: "Please try again later", color: '#ff8800', guild: guild})
     let doc = await guildModel.findOne({id: foundGuildId})
     if (!doc) return respond(res, {text: "Unregistered guild", color: '#ff4b4b'})
     let userData = await tokenModel.findOne({id: user.id})
     let member = await getMember(user.id,guild)
     if (!member) return respond(res, {text: "Not in the server", color: '#ff8800', guild: guild})
-    //MSG
+    // MSG
     let channel = await getChannel('1109020436026634265')
     let template = await getChannel('1109020434810294344')
     let msg = await template.messages.fetch('1258073676792856597')
@@ -1102,17 +1050,14 @@ app.get('/backup', async function (req, res) {
       doc.users.push(user.id)
     }
     else {
-      let userIndex = doc.users.indexOf(user.id) + 1
       let notAdded = member ? await addRole(member,[doc.verifiedRole,"sloopie"],guild) : null
       if (notAdded) console.log('Not added',notAdded)
       return respond(res, {text: customMsg ? customMsg.msg : 'Already verified', text2: doc.users.length+'/'+doc.maxTokens+" MEMBERS", color: '#ff8800', guild: guild})
     }
     //
     await doc.save();
-    //add role
     await addRole(member,[doc.verifiedRole,"sloopie"],guild)
     if (guild.id == '1109020434449575936') channel.send({content: content})
-    //logs
     let userIndex = doc.users.indexOf(user.id) + 1
     respond(res, {text: customMsg ? customMsg.msg : 'You have been verified', text2: '<b>'+getNth(userIndex)+'</b> member', color: '#b6ff84', guild: guild})
     
@@ -1137,6 +1082,7 @@ app.get('/backup', async function (req, res) {
   }
   //
 });
+
 app.get('/', async function (req, res) {
   res.status(200).send({ status: "VALCORE is up and running!!" })
 });
