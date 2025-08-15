@@ -14,31 +14,18 @@ ATTACHMENT - 11
 
 module.exports = {
   register: true,
-  deleteSlashes: ['1391422887231098880'],
+  deleteSlashes: ['1040771266929496138','1234990429397717105','1392825039505592371','1169591423566368840','1170281459177771099','1234990408933707796'],
   slashes: [
-    {
-      "name": "settings",
-      "type": 1,
-      "description": "Bot settings",
-      "options": [
-        {
-          "name": 'key',
-          "description": 'Access key',
-          "type": 3,
-          "required": true,
-        },
-      ],
-    },
     {
       "name": "restore_members",
       "type": 1,
-      "description": "Instructions to restore your members on your new server",
+      "description": "BACKUP - Instructions to restore your members on your new server",
       "options": [],
     },
     {
       "name": "joinall",
       "type": 1,
-      "description": "Join all your verified users to your backup server",
+      "description": "BACKUP - Join all your verified users to your backup server",
       "options": [
         {
           "name": 'key',
@@ -63,7 +50,7 @@ module.exports = {
     {
       "name": "join",
       "type": 1,
-      "description": "Joins a verified user to a server",
+      "description": "BACKUP - Joins a verified user to a server",
       "options": [
         {
           "name": 'key',
@@ -100,7 +87,7 @@ module.exports = {
     {
       "name": "transfer",
       "type": 1,
-      "description": "Transfer_data",
+      "description": "BACKUP - Transfer your data",
       "options": [
         {
           "name": 'new_server_id',
@@ -117,28 +104,15 @@ module.exports = {
       ],
     },
     {
-      "name": "status",
-      "type": 1,
-      "description": "Get backup status of a guild",
-      "options": [
-        {
-          "name": 'key',
-          "description": 'Access Key',
-          "type": 3,
-          "required": false,
-        },
-      ],
-    },
-    {
       "name": "verify_link",
       "type": 1,
-      "description": "Get verification link of a guild",
+      "description": "BACKUP - Get verification link of a guild",
       "options": [],
     },
     {
       "name": "data",
       "type": 1,
-      "description": "Get server data",
+      "description": "BACKUP - Get server data",
       "options": [
         {
           "name": 'id',
@@ -151,7 +125,7 @@ module.exports = {
     {
       "name": "setlimit",
       "type": 1,
-      "description": "Update max tokens limit",
+      "description": "BACKUP - Update max tokens limit",
       "options": [
         {
           "name": 'id',
@@ -170,7 +144,7 @@ module.exports = {
     {
       "name": "register",
       "type": 1,
-      "description": "Register your server",
+      "description": "BACKUP - Register your server",
       "options": [
         {
           "name": 'guild_id',
@@ -183,7 +157,7 @@ module.exports = {
     {
       "name": "unregister",
       "type": 1,
-      "description": "Unregister your server",
+      "description": "BACKUP - Unregister your server",
       "options": [
         {
           "name": 'key',
