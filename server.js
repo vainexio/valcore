@@ -926,8 +926,7 @@ client.on('interactionCreate', async inter => {
       if (!doc) return inter.update({content: emojis.warning+' Unergistered guild ID', components: []})
       let user = doc.users.find(u => u === userId)
       if (!user) return inter.update({content: emojis.warning+' You are not verified on this server', components: []})
-
-      await inter.reply({content: emojis.check+' You have been **unverified** from this server!\nClick the button again if you wish to reverify', components: []})
+        await inter.update({content: emojis.check+' You have been **unverified** from this server!\nClick the button again if you wish to reverify', components: []})
       doc.users.splice(doc.users.indexOf(userId),1)
       await doc.save();
       await sleep(1000)
