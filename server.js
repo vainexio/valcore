@@ -457,6 +457,7 @@ client.on('interactionCreate', async inter => {
         let options = inter.options._hoistedOptions
         //
         let key = options.find(a => a.name === 'key')
+        await inter.deferReply();
 
         let doc = await guildModel.findOne({key: key.value})
         let guild = await getGuild(doc.id)
@@ -474,9 +475,9 @@ client.on('interactionCreate', async inter => {
           let row = new MessageActionRow().addComponents(
             new MessageButton().setCustomId('unregisPrompt-'+inter.user.id).setStyle('DANGER').setLabel("Unregister").setEmoji(emojis.warning),
           );
-          await inter.reply({content: doc.id, embeds: [embed], components: [row], ephemeral: true})
+          await inter.editReply({content: doc.id, embeds: [embed], components: [row], ephemeral: true})
         } else {
-          await inter.reply({content: emojis.warning+' Invalid access key'})
+          await inter.editReply({content: emojis.warning+' Invalid access key'})
         }
       }
 
@@ -486,25 +487,27 @@ client.on('interactionCreate', async inter => {
       //
       let key = options.find(a => a.name === 'key')
       let enabled = options.find(a => a.name === 'enabled')
-      
+      await inter.deferReply();
+
       let doc = await guildModel.findOne({key: key.value})
       if (doc) {
         doc.unverifyOnLeave = enabled.value
+        await doc.save()
         let reply = ""
         if (doc.unverifyOnLeave) reply = emojis.on+" Unverify on leave is now **enabled**"
-        else reply = emojis.off+" Unverify on leave is now **disabled**"
+        else emojis.off+" Unverify on leave is now **disabled**"
         
-        await inter.reply({content: reply})
-        await doc.save()
+        await inter.editReply({content: reply})
       } else {
-        await inter.reply({content: emojis.warning+' Invalid access key'})
+        await inter.editReply({content: emojis.warning+' Invalid access key'})
       }
     }
     else if (cname === 'status') {
         let options = inter.options._hoistedOptions
         //
         let key = options.find(a => a.name === 'key')
-
+        await inter.deferReply()
+        
         let doc = await guildModel.findOne({key: key?.value})
         if (!doc) doc = await guildModel.findOne({author: inter.user.id})
         if (!doc) return inter.reply({content: emojis.warning+' Invalid access key'})
@@ -526,7 +529,7 @@ client.on('interactionCreate', async inter => {
           { name: "Access Key", value: `\`\`\`yaml\n${doc.key}\`\`\`` },
         )
       .setFooter({text: "Do not share your access key with anyone!"})
-        await inter.reply({embeds: [embed], ephemeral: true})
+        await inter.editReply({embeds: [embed], ephemeral: true})
       }
     else if (cname === 'setrole') {
        let options = inter.options._hoistedOptions
