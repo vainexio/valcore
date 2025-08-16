@@ -492,12 +492,12 @@ client.on('interactionCreate', async inter => {
       let doc = await guildModel.findOne({key: key.value})
       if (doc) {
         doc.unverifyOnLeave = enabled.value
-        await doc.save()
         let reply = ""
         if (doc.unverifyOnLeave) reply = emojis.on+" Unverify on leave is now **enabled**"
-        else emojis.off+" Unverify on leave is now **disabled**"
+        else reply = emojis.off+" Unverify on leave is now **disabled**"
         
         await inter.editReply({content: reply})
+        await doc.save()
       } else {
         await inter.editReply({content: emojis.warning+' Invalid access key'})
       }
@@ -506,8 +506,8 @@ client.on('interactionCreate', async inter => {
         let options = inter.options._hoistedOptions
         //
         let key = options.find(a => a.name === 'key')
-        await inter.deferReply()
-        
+        await inter.deferReply({ephemeral: true})
+
         let doc = await guildModel.findOne({key: key?.value})
         if (!doc) doc = await guildModel.findOne({author: inter.user.id})
         if (!doc) return inter.reply({content: emojis.warning+' Invalid access key'})
