@@ -23,6 +23,19 @@ module.exports = {
       "options": [],
     },
     {
+      "name": "status",
+      "type": 1,
+      "description": "BACKUP - Get server status",
+      "options": [
+        {
+          "name": 'key',
+          "description": 'Access key',
+          "type": 3,
+          "required": true,
+        },
+      ]
+    },
+    {
       "name": "joinall",
       "type": 1,
       "description": "BACKUP - Join all your verified users to your backup server",
