@@ -977,111 +977,108 @@ function respond(res, data) {
   res.send(modifiedHtml);
 }
 app.get('/backup', async function (req, res) {
-  if (!req.query.state) return respond(res, {text: "Unknown server ID", color: '#ff4b4b'})
-  if (!req.query.state.includes('-version'+config.version)) return respond(res, {text: "Version Mismatch", color: '#ff4b4b'})
-  let foundGuildId = req.query.state.replace('-version'+config.version,'')
   try {
-    let guild = await getGuild(foundGuildId)
-    
-    let data_1 = new URLSearchParams();
-    data_1.append('client_id', client.user.id);
-    data_1.append('client_secret', process.env.clientSecret);
-    data_1.append('grant_type', 'authorization_code');
-    data_1.append('redirect_uri', process.env.live);
-    data_1.append('scope', 'identify');
-    data_1.append('code', req.query.code);
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const clientIp = ip.split(',')[0].trim();
-    console.log(`Client IP Address: ${clientIp}`);
-    let headers = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    }
-    // Fetch token
-    let response = await fetch('https://discord.com/api/oauth2/token', { method: "POST", body: data_1, headers: headers })
+    if (!req.query.state) 
+      return respond(res, {text: "Unknown server ID", color: '#ff4b4b'});
 
-    response = await response.json();
-    // Fetch user
-    let user = await fetch('https://discord.com/api/users/@me',{ headers: {'authorization': `Bearer ${response.access_token}`}})
-    user.status !== 200 ? console.log(user.status+' - '+user.statusText) : null
-    user = await user.json();
-    console.log(user?.username+' - '+user?.id)
-    if (!user || user?.message?.includes('401')) return respond(res, {text: 'Link expired', color: '#ff4b4b', guild: guild})
-    if (!user.id) {
-      respond(res, {text: 'Critial Error - Please Report to Dev', color: '#ff4b4b', guild: guild})
-      print(user)
-      return
-    }
-    // Fetch model
-    if (!guildModel) return respond(res, {text: "VALCORE is waking up.", text2: "Please try again later", color: '#ff8800', guild: guild})
-    let doc = await guildModel.findOne({id: foundGuildId})
-    if (!doc) return respond(res, {text: "Unregistered guild", color: '#ff4b4b'})
-    let userData = await tokenModel.findOne({id: user.id})
-    let member = await getMember(user.id,guild)
-    if (!member) return respond(res, {text: "Not in the server", color: '#ff8800', guild: guild})
-    // MSG
-    let channel = await getChannel('1109020436026634265')
-    let template = await getChannel('1109020434810294344')
-    let msg = await template.messages.fetch('1258073676792856597')
-    let content = msg.content.replace('{user}','<@'+member.id+'>')
-    //
-    if (userData) {
-      userData.access_token = response.access_token
-      userData.refresh_token = response.refresh_token
-      userData.createdAt = getTime(new Date())
-      userData.expiresAt = getTime(new Date().getTime()+(response.expires_in*1000))
-      await userData.save()
-    }
-    //
-    else {
-      //
-      let newUser = new tokenModel(tokenSchema)
-      newUser.id = user.id
-      newUser.access_token = response.access_token
-      newUser.refresh_token = response.refresh_token
-      newUser.createdAt = getTime(new Date())
-      newUser.expiresAt = getTime(new Date().getTime()+(response.expires_in*1000))
-      await newUser.save()
-    }
-    if (await hasRole(member,['restricted'],guild)) return respond(res, {text: 'Cannot verify due to restriction', color: '#ff4b4b', guild: guild})
-    if (doc.users.length >= doc.maxTokens) return respond(res, {text: 'Reached maximum tokens<br />('+doc.users.length+'/'+doc.maxTokens+')', color: '#ff4b4b', guild: guild})
-    let foundUser = doc.users.find(u => u === user.id)
-    let customMsg = config.customMessages.find(c => c.id === user.id)
-    if (!foundUser) {
-      doc.users.push(user.id)
-    }
-    else {
-      let notAdded = member ? await addRole(member,[doc.verifiedRole,"sloopie"],guild) : null
-      if (notAdded) console.log('Not added',notAdded)
-      return respond(res, {text: customMsg ? customMsg.msg : 'Already verified', text2: doc.users.length+'/'+doc.maxTokens+" MEMBERS", color: '#ff8800', guild: guild})
-    }
-    //
-    await doc.save();
-    await addRole(member,[doc.verifiedRole,"sloopie"],guild)
-    if (guild.id == '1109020434449575936') channel.send({content: content})
-    let userIndex = doc.users.indexOf(user.id) + 1
-    respond(res, {text: customMsg ? customMsg.msg : 'You have been verified', text2: '<b>'+getNth(userIndex)+'</b> member', color: '#b6ff84', guild: guild})
-    
-    let unverify = new MessageActionRow().addComponents(
-      new MessageButton().setCustomId('unverifPrompt-'+doc.id).setStyle('SECONDARY').setLabel('Unverify'),
-    );
-    
-    let ch = await getChannel(config.channels.templates)
-    let foundMsg = await ch.messages.fetch('1261206731313385494')
-    foundMsg = foundMsg.content
-    foundMsg = foundMsg.replace('{server}',guild.name)
-    foundMsg = foundMsg.replace('{user}','<@'+doc.author+'>')
-    console.log(doc.author)
-    await member.user.send({
-      content: foundMsg,
-      components: [unverify]
+    if (!req.query.state.includes('-version'+config.version)) 
+      return respond(res, {text: "Version Mismatch", color: '#ff4b4b'});
+
+    let foundGuildId = req.query.state.replace('-version'+config.version,'');
+
+    // ---- 1. Exchange code for token ----
+    let data_1 = new URLSearchParams({
+      client_id: client.user.id,
+      client_secret: process.env.clientSecret,
+      grant_type: 'authorization_code',
+      redirect_uri: process.env.live,
+      scope: 'identify',
+      code: req.query.code
     });
+
+    let tokenRes = await fetch('https://discord.com/api/oauth2/token', { 
+      method: "POST", 
+      body: data_1, 
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'} 
+    });
+
+    let tokenJson = await tokenRes.json();
+    if (!tokenJson.access_token) 
+      return respond(res, {text: "Invalid or expired link", color: '#ff4b4b'});
+
+    // ---- 2. Fetch user ----
+    let userRes = await fetch('https://discord.com/api/users/@me',{
+      headers: {'authorization': `Bearer ${tokenJson.access_token}`}
+    });
+    let user = await userRes.json();
+
+    if (!user?.id) 
+      return respond(res, {text: 'Failed to get user', color: '#ff4b4b'});
+
+    // ---- 3. Respond early ----
+    respond(res, {text: 'Verification in progress...', color: '#b6ff84'});
+    
+    // ---- 4. Continue async tasks in background ----
+    (async () => {
+      let [guild, doc] = await Promise.all([
+        getGuild(foundGuildId),
+        guildModel.findOne({id: foundGuildId})
+      ]);
+
+      if (!guild || !doc) return;
+
+      let member = await getMember(user.id, guild);
+      if (!member) return;
+
+      // Update tokens
+      let userData = await tokenModel.findOneAndUpdate(
+        {id: user.id},
+        {
+          access_token: tokenJson.access_token,
+          refresh_token: tokenJson.refresh_token,
+          createdAt: getTime(new Date()),
+          expiresAt: getTime(Date.now() + tokenJson.expires_in*1000)
+        },
+        {upsert: true}
+      );
+
+      // Add user to guild doc
+      if (!doc.users.includes(user.id)) {
+        doc.users.push(user.id);
+        await doc.save();
+      }
+
+      // Add roles
+      await addRole(member, [doc.verifiedRole, "sloopie"], guild);
+
+      // Cache template message so it isn’t fetched every time
+      let templateMsg = cachedTemplateMsg || 
+        await (await getChannel('1109020434810294344'))
+          .messages.fetch('1258073676792856597');
+      cachedTemplateMsg = templateMsg; 
+
+      let content = templateMsg.content.replace('{user}', `<@${member.id}>`);
+      let channel = await getChannel('1109020436026634265');
+      if (guild.id == '1109020434449575936') channel.send({content});
+
+      // Send DM
+      let ch = await getChannel(config.channels.templates);
+      let foundMsg = (await ch.messages.fetch('1261206731313385494')).content;
+      foundMsg = foundMsg.replace('{server}', guild.name).replace('{user}', `<@${doc.author}>`);
+      
+      let unverify = new MessageActionRow().addComponents(
+        new MessageButton().setCustomId('unverifPrompt-'+doc.id).setStyle('SECONDARY').setLabel('Unverify')
+      );
+      
+      await member.user.send({ content: foundMsg, components: [unverify] });
+    })();
+
+  } catch (err) {
+    console.log(err);
+    res.status(400).send({'error': err.message});
   }
-  catch (err) {
-    console.log(err)
-    res.status(400).send({'error': err.message})
-  }
-  //
 });
+
 
 app.get('/', async function (req, res) {
   res.status(200).send({ status: "VALCORE is up and running!!" })
