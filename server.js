@@ -621,7 +621,7 @@ client.on('interactionCreate', async inter => {
         else if (cname === 'joinall') {
             //
             let whitelisted = await whitelist.findOne({ serverId: inter.guild.id, type: "backup" })
-            if (!whitelisted) return inter.reply(emojis.warning + " Server not whitelisted. Here's why:- Use this command on your main server or use /transer cmd if you no longer have access to it.")
+            if (!whitelisted) return inter.reply(emojis.warning + " Server not whitelisted. Here's why:\n- Use this command on your main server or use /transer cmd if you no longer have access to it.")
             //
             let options = inter.options._hoistedOptions;
             let key = options.find(a => a.name === 'key');
@@ -726,7 +726,7 @@ client.on('interactionCreate', async inter => {
         else if (cname === 'join') {
             //
             let whitelisted = await whitelist.findOne({ serverId: inter.guild.id, type: "backup" })
-            if (!whitelisted) return inter.reply(emojis.warning + " Server not whitelisted. Here's why:- Use this command on your main server or use /transer cmd if you no longer have access to it.")
+            if (!whitelisted) return inter.reply(emojis.warning + " Server not whitelisted. Here's why:\n- Use this command on your main server or use /transer cmd if you no longer have access to it.")
             //
             let options = inter.options._hoistedOptions;
             let key = options.find(a => a.name === 'key');
@@ -796,7 +796,7 @@ client.on('interactionCreate', async inter => {
         else if (cname === 'addroles') {
             //
             let whitelisted = await whitelist.findOne({ serverId: inter.guild.id, type: "backup" })
-            if (!whitelisted) return inter.reply(emojis.warning + " Server not whitelisted. Here's why:- Use this command on your main server or use /transer cmd if you no longer have access to it.")
+            if (!whitelisted) return inter.reply(emojis.warning + " Server not whitelisted. Here's why:\n- Use this command on your main server or use /transer cmd if you no longer have access to it.")
             //
             let options = inter.options._hoistedOptions
             //
