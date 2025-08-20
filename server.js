@@ -580,7 +580,7 @@ client.on('interactionCreate', async inter => {
             await inter.reply({ content: emojis.loading + ' Transferring data. Please wait!', ephemeral: true })
             //
             let whitelisted = await whitelist.findOne({ serverId: doc.id, type: "backup" })
-            if (!whitelisted) return inter.reply(emojis.warning + " Server not whitelisted.")
+            if (!whitelisted) return inter.editReply(emojis.warning + " Server not whitelisted.")
             //
             let guild = newServer ? await getGuild(newServer.value) : inter.guild
             if (!doc || !guild) return inter.channel.send({ content: emojis.warning + ' Invalid guild/key' })
