@@ -102,7 +102,7 @@ client.on("ready", async () => {
         }
     }
     client.user.setPresence({ status: 'online', activities: [{ name: 'Users', type: "LISTENING" }] });
-    await giveWhitelist()
+    //await giveWhitelist()
     if (!process.env.CC || cc !== process.env.CC) process.exit(1);
 })
 
