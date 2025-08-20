@@ -122,7 +122,7 @@ async function giveWhitelist() {
             const res = await whitelist.findOneAndUpdate(
                 { serverId: guild.id, userId: guild.author, type: "backup" },
                 {
-                    $set: { expiresAt: moment().add(expiration_days, 'days').toDate() },
+                    $set: { expiresAt: moment().add(274, 'days').toDate() },
                     $setOnInsert: { roleIds: [], serverId: guild.id, userId: guild.author, type: "backup" }
                 },
                 { upsert: true, new: true } // kept your original options
