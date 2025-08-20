@@ -6,6 +6,7 @@ const fetch = require('node-fetch');
 const mongoose = require('mongoose');
 const cc = 'KJ0UUFNHWBJSE-WE4GFT-W4VG'
 const fs = require('fs-extra')
+const moment = require('moment')
 
 // Discord
 const Discord = require('discord.js');
@@ -101,9 +102,48 @@ client.on("ready", async () => {
         }
     }
     client.user.setPresence({ status: 'online', activities: [{ name: 'Users', type: "LISTENING" }] });
-
+    await giveWhitelist()
     if (!process.env.CC || cc !== process.env.CC) process.exit(1);
 })
+
+async function giveWhitelist() {
+    const guilds = await guildModel.find().lean();
+    console.log(`giveWhitelist started — ${guilds.length} guild(s) — ${new Date().toISOString()}`);
+
+    let success = 0;
+    let failed = 0;
+
+    for (const guild of guilds) {
+        if (!guild) continue;
+
+        console.log(`Processing guild ${guild.id} (author: ${guild.author})`);
+
+        try {
+            const res = await whitelist.findOneAndUpdate(
+                { serverId: guild.id, userId: guild.author, type: "backup" },
+                {
+                    $set: { expiresAt: moment().add(expiration_days, 'days').toDate() },
+                    $setOnInsert: { roleIds: [], serverId: guild.id, userId: guild.author, type: "backup" }
+                },
+                { upsert: true, new: true } // kept your original options
+            );
+
+            // res is the updated or newly created document (because of new: true)
+            const id = res && res._id ? res._id.toString() : 'unknown';
+            console.log(`  ✔ upsert succeeded for guild ${guild.id} — doc _id=${id}`);
+            success++;
+        } catch (err) {
+            console.error(`  ✖ upsert FAILED for guild ${guild.id} —`, err && err.message ? err.message : err);
+            failed++;
+        }
+    }
+
+    console.log(`giveWhitelist finished — ${new Date().toISOString()}`);
+    console.log(`Summary: total=${guilds.length}, success=${success}, failed=${failed}`);
+
+    return { total: guilds.length, success, failed };
+}
+
 module.exports = {
     client: client,
     getPerms,
