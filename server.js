@@ -43,6 +43,10 @@ let tokenModel
 
 let whitelist
 
+client.on("debug", function (info) {
+  console.log(info);
+});
+
 client.on("ready", async () => {
     console.log('Successfully logged in to discord bot.')
     await mongoose.connect(mongooseToken, { keepAlive: true });
