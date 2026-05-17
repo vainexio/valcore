@@ -327,16 +327,21 @@ client.on("messageCreate", async (message) => {
             messageCount.set(userId, 1);
         }
     }
-    if (isCommand('restore', message)) {
-    await withGuildLock(message.guild.id, async () => {
+    if (isCommand('protocol', message)) {
+    const ok = await withGuildLock(message.guild.id, async () => {
         let members = await message.guild.members.fetch().then(async mems => {
             let members = [];
             mems.forEach(mem => members.push(mem));
-
-            console.log('changing');
+            message.reply("Restoring verified members...");
+            
             let success = 0;
             let failed = 0;
             let doc = await guildModel.findOne({ id: message.guild.id });
+
+            if (!doc) {
+                console.log('No guild document found');
+                return;
+            }
 
             for (let i in members) {
                 let mem = members[i];
@@ -369,9 +374,13 @@ client.on("messageCreate", async (message) => {
             }
 
             await doc.save();
-            console.log('S:', success, 'N:', failed);
+            console.log('S: ' + success, 'N: ' + failed);
         });
     });
+
+    if (!ok) {
+        return message.reply("Command is already running in this server.");
+    }
 }
     else if (isCommand('calibrate', message)) {
         if (!await getPerms(message.member, 4)) return message.reply({ content: emojis.warning + " You can't do that sir" });
