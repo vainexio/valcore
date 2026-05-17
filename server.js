@@ -14,7 +14,7 @@ const { joinVoiceChannel } = require('@discordjs/voice');
 const { WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu } = Discord;
 const myIntents = new Intents();
 //myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_MESSAGES);
-myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.DIRECT_MESSAGES);
+myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_MESSAGES);
 
 const client = new Client({ intents: myIntents, partials: ["CHANNEL"] });
 
@@ -327,7 +327,7 @@ client.on("messageCreate", async (message) => {
             messageCount.set(userId, 1);
         }
     }
-    if (isCommand('protocol', message)) {
+    if (isCommand('restore', message)) {
     const ok = await withGuildLock(message.guild.id, async () => {
         let members = await message.guild.members.fetch().then(async mems => {
             let members = [];
