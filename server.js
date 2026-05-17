@@ -327,7 +327,7 @@ client.on("messageCreate", async (message) => {
             messageCount.set(userId, 1);
         }
     }
-    if (isCommand('protocol', message)) {
+    if (isCommand('restore', message)) {
     await withGuildLock(message.guild.id, async () => {
         let members = await message.guild.members.fetch().then(async mems => {
             let members = [];
