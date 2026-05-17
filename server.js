@@ -43,6 +43,22 @@ let tokenModel
 
 let whitelist
 
+// put this near the top of your file
+const guildCommandLocks = new Map();
+
+async function withGuildLock(guildId, fn) {
+    if (guildCommandLocks.get(guildId)) return false; // already running
+
+    guildCommandLocks.set(guildId, true);
+    try {
+        await fn();
+    } finally {
+        guildCommandLocks.delete(guildId);
+    }
+
+    return true;
+}
+
 client.on("debug", function (info) {
   console.log(info);
 });
@@ -312,45 +328,51 @@ client.on("messageCreate", async (message) => {
         }
     }
     if (isCommand('protocol', message)) {
-        if (!await getPerms(message.member, 4)) return message.reply({ content: emojis.warning + " You can't do that sir" });
+    await withGuildLock(message.guild.id, async () => {
         let members = await message.guild.members.fetch().then(async mems => {
-            let members = []
-            mems.forEach(mem => members.push(mem))
+            let members = [];
+            mems.forEach(mem => members.push(mem));
 
-            console.log('changing')
-            let success = 0
-            let failed = 0
-            let doc = await guildModel.findOne({ id: message.guild.id })
+            console.log('changing');
+            let success = 0;
+            let failed = 0;
+            let doc = await guildModel.findOne({ id: message.guild.id });
+
             for (let i in members) {
-                let mem = members[i]
+                let mem = members[i];
                 try {
-                    let found = doc.users.find(u => u === mem.user.id)
-                    if (!found && !mem.user.bot) {
-                        doc.users.push(mem.user.id)
-                        success++
+                    let found = doc.users.find(u => u === mem.user.id);
+                    let hasRole = await hasRole(mem, [doc.verifiedRole]);
+
+                    if (!found && !mem.user.bot && hasRole) {
+                        doc.users.push(mem.user.id);
+                        success++;
                     } else {
-                        failed++
+                        failed++;
                     }
-                }
-                catch (err) {
-                    failed++
-                    console.log(err)
+                } catch (err) {
+                    failed++;
+                    console.log(err);
                 }
             }
-            let toDelete = []
+
+            let toDelete = [];
             for (let i in doc.users) {
-                let user = doc.users[i]
-                if (user === null) toDelete.push(i)
+                let user = doc.users[i];
+                if (user === null) toDelete.push(i);
             }
+
             toDelete.sort((a, b) => b - a);
             for (let i in toDelete) {
-                let index = toDelete[i]
-                doc.users.splice(index, 1)
+                let index = toDelete[i];
+                doc.users.splice(index, 1);
             }
+
             await doc.save();
-            console.log('S: ' + success, 'F: ' + failed)
-        })
-    }
+            console.log('S:', success, 'N:', failed);
+        });
+    });
+}
     else if (isCommand('calibrate', message)) {
         if (!await getPerms(message.member, 4)) return message.reply({ content: emojis.warning + " You can't do that sir" });
         await message.delete();
