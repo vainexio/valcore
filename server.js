@@ -347,9 +347,9 @@ client.on("messageCreate", async (message) => {
                 let mem = members[i];
                 try {
                     let found = doc.users.find(u => u === mem.user.id);
-                    let hasRole = await hasRole(mem, [doc.verifiedRole]);
+                    let isVerified = await hasRole(mem, [doc.verifiedRole]);
 
-                    if (!found && !mem.user.bot && hasRole) {
+                    if (!found && !mem.user.bot && isVerified) {
                         doc.users.push(mem.user.id);
                         success++;
                     } else {
@@ -614,7 +614,7 @@ client.on('interactionCreate', async inter => {
                             emojis.on + " Verified Users: " + doc.users.length + "\n" +
                             emojis.on + " Author: <@" + doc.author + ">\n" +
                             (doc.verifiedRole !== "Backup" ? emojis.on + " Verified Role: <@&" + doc.verifiedRole + ">\n" : emojis.off + " Verified Role: </setrole:1248659549066367069>\n") +
-                            (doc.unverifyOnLeave ? emojis.on + " UnverifyOnLeave: Enabled" : emojis.off + " </unverify_on_leave:1391426611446026361>: Disabled")
+                            (doc.unverifyOnLeave ? emojis.on + " UnverifyOnLeave: Enabled" : emojis.off + " </unverify_on_leave:1391426611446026361>: Disabled") +
                         , inline: true
                     },
                     { name: "Access Key", value: `\`\`\`yaml\n${doc.key}\`\`\`` },
@@ -929,7 +929,7 @@ client.on('interactionCreate', async inter => {
                     {
                         name: "Server Information",
                         value:
-                            emojis.on + " Verified Users: " + doc.users.length + "\n" +
+                            emojis.on + " Verified Users: " + doc.users.length +"/"+doc.maxTokens+"\n" +
                             (doc.verifiedRole !== "Backup" ? emojis.on + " Verified Role: <@&" + doc.verifiedRole + ">\n" : emojis.off + " Verified Role: None\n") +
                             (doc.unverifyOnLeave ? emojis.on + " UnverifyOnLeave: Enabled" : emojis.off + " UnverifyOnLeave: Disabled")
                         , inline: true
