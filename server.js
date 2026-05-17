@@ -374,7 +374,7 @@ client.on("messageCreate", async (message) => {
             }
 
             await doc.save();
-            message.reply('S: ' + success, 'N: ' + failed);
+            message.reply('SUCCESS: ' + success+'\nOTHER: ' + failed);
         });
     });
 
