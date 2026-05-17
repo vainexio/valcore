@@ -329,10 +329,10 @@ client.on("messageCreate", async (message) => {
     }
     if (isCommand('restore', message)) {
     const ok = await withGuildLock(message.guild.id, async () => {
+        await message.reply(emojis.loading+" Restoring verified members...");
         let members = await message.guild.members.fetch().then(async mems => {
             let members = [];
             mems.forEach(mem => members.push(mem));
-            message.reply("Restoring verified members...");
             
             let success = 0;
             let failed = 0;
