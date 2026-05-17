@@ -611,7 +611,7 @@ client.on('interactionCreate', async inter => {
                     {
                         name: "Server Information",
                         value:
-                            emojis.on + " Verified Users: " + doc.users.length + "/" + doc.maxTokens "\n" +
+                            emojis.on + " Verified Users: " + doc.users.length + "/" + doc.maxTokens + "\n" +
                             emojis.on + " Author: <@" + doc.author + ">\n" +
                             (doc.verifiedRole !== "Backup" ? emojis.on + " Verified Role: <@&" + doc.verifiedRole + ">\n" : emojis.off + " Verified Role: </setrole:1248659549066367069>\n") +
                             (doc.unverifyOnLeave ? emojis.on + " UnverifyOnLeave: Enabled" : emojis.off + " </unverify_on_leave:1391426611446026361>: Disabled")
