@@ -318,7 +318,7 @@ client.on("messageCreate", async (message) => {
             messageCount.set(userId, 1);
         }
     }
-            if (isCommand('restore', message)) {
+    if (isCommand('restore', message)) {
                 const ok = await withGuildLock(message.guild.id, async () => {
                     await message.reply(emojis.loading + " Restoring verified members...");
 
@@ -368,59 +368,77 @@ client.on("messageCreate", async (message) => {
                     return message.reply("Command is already running in this server.");
                 }
             }
-    else if (isCommand('calibrate', message)) {
-        if (!await getPerms(message.member, 4)) return message.reply({ content: emojis.warning + " You can't do that sir" });
-        await message.delete();
-        let guilds = await guildModel.find()
+        else if (isCommand('calibrate', message)) {
+            if (!await getPerms(message.member, 4)) {
+                return message.reply({ content: emojis.warning + " You can't do that sir" });
+            }
 
-        for (let i in guilds) {
-            let guild = guilds[i]
-            let toDelete = []
-            let safe = 0
-            let server = await getGuild(guild.id)
-            let error = 0
+            await message.delete();
 
-            for (let i in guild.users) {
-                let user = guild.users[i]
-                let userData = await tokenModel.findOne({ id: user })
-                if (!userData) {
-                    toDelete.push(i)
-                    if (server) {
-                        try {
-                            let member = await getMember(user, message.guild)
-                            if (member) await removeRole(member, ['backup', guild.verifiedRole])
-                        } catch (err) {
-                            error++
-                        }
-                    }
+            const guilds = await guildModel.find();
+
+            for (const guild of guilds) {
+                const server = await getGuild(guild.id);
+
+                let error = 0;
+                let safe = 0;
+
+                // Fetch all token users at once
+                const existingUsers = await tokenModel.find({
+                    id: { $in: guild.users }
+                }).select("id");
+
+                const existingIds = new Set(existingUsers.map(u => u.id));
+                const invalidUsers = guild.users.filter(user => !existingIds.has(user));
+                safe = guild.users.length - invalidUsers.length;
+
+                // Remove roles concurrently
+                if (server) {
+                    await Promise.allSettled(
+                        invalidUsers.map(async (user) => {
+                            try {
+                                const member = await getMember(user, server);
+
+                                if (member) {
+                                    await removeRole(member, ['backup', guild.verifiedRole]);
+                                }
+                            } catch {
+                                error++;
+                            }
+                        })
+                    );
                 }
-                else safe++
+
+                // Remove invalid users
+                guild.users = guild.users.filter(user => existingIds.has(user));
+
+                const embed = new EmbedBuilder()
+                    .addFields(
+                        {
+                            name: server ? server.name : 'Unknown',
+                            value: `Changes\n${guild.users.length + invalidUsers.length} >> ${guild.users.length}`
+                        },
+                        {
+                            name: 'Total Registered Users',
+                            value: guild.users.length.toString()
+                        },
+                        {
+                            name: 'Error',
+                            value: error.toString()
+                        }
+                    )
+                    .setFooter({ text: guild.id })
+                    .setColor(colors.none);
+
+                await message.channel.send({
+                    content: `<@${guild.author}>`,
+                    embeds: [embed]
+                });
+
+                await guild.save();
             }
-
-            let embed = new EmbedBuilder()
-                .addFields(
-                    { name: server ? server.name : 'Unknown', value: 'Changes\n' + guild.users.length + ' >> ' + (guild.users.length - toDelete.length) }
-                )
-
-            toDelete.sort((a, b) => b - a);
-            for (let i in toDelete) {
-                let index = toDelete[i]
-                guild.users.splice(index, 1)
-            }
-            embed
-                .addFields(
-                    { name: 'Total Registered Users', value: guild.users.length.toString() },
-                    { name: 'Error', value: error.toString() }
-                )
-                .setFooter({ text: guild.id })
-                .setColor(colors.none)
-
-            message.channel.send({ content: '<@' + guild.author + '>', embeds: [embed] })
-            //guild.verifiedRole = "Backup"
-            await guild.save();
         }
-    }
-    else if (isCommand('fixrole', message)) {
+        else if (isCommand('fixrole', message)) {
         let members = await message.guild.members.fetch().then(async mems => {
             let members = []
             mems.forEach(mem => members.push(mem))
@@ -452,7 +470,7 @@ client.on("messageCreate", async (message) => {
             await message.reply("Total users checked: " + data.total + "\nCalibrated: " + data.calibrated + "\nFailed: " + data.failed)
         })
     }
-    else if (isCommand('check', message)) {
+        else if (isCommand('check', message)) {
         if (!await getPerms(message.member, 4)) return message.reply({ content: emojis.warning + " You can't do that sir" });
         let guilds = await guildModel.find()
         let list = []
