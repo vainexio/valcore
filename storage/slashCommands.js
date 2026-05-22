@@ -212,6 +212,12 @@ module.exports = {
       ],
     },
     {
+      "name": "myservers",
+      "type": 1,
+      "description": "See all servers you are verified on and unverify from any of them",
+      "options": [],
+    },
+    {
       "name": "unverify_on_leave",
       "type": 1,
       "description": "BACKUP - Toggle whether users are unverified when they leave the server",

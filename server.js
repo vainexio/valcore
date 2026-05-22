@@ -515,7 +515,7 @@ client.on('interactionCreate', async inter => {
                     });
                 }
 
-                await inter.deferReply({ ephemeral: true });
+                await inter.deferReply();
 
                 const options = inter.options.data;
                 const guildIdOpt = options.find(a => a.name === 'guild_id');
@@ -1290,6 +1290,61 @@ client.on('interactionCreate', async inter => {
             if (!doc) return inter.reply({ content: emojis.warning + ' Invalid guild/author data' })
             inter.reply({ content: doc.key, ephemeral: true })
         }
+        else if (cname === 'myservers') {
+            try {
+                await inter.deferReply({ flags: 64 });
+
+                const allDocs = await guildModel.find({ users: inter.user.id });
+
+                if (!allDocs || allDocs.length === 0) {
+                    return inter.editReply({
+                        embeds: [new EmbedBuilder()
+                            .setColor(colors.none)
+                            .setTitle('Your Verified Servers')
+                            .setDescription('You are not currently verified on any servers through Valcore.')]
+                    });
+                }
+
+                const options = [];
+                let description = '';
+                for (const doc of allDocs) {
+                    const guild = await getGuild(doc.id);
+                    const name = guild ? guild.name : 'Unknown Server';
+                    const icon = guild?.iconURL() ?? null;
+                    description += `• **${name}** (\`${doc.id}\`)\n`;
+                    options.push({
+                        label: name.length > 100 ? name.slice(0, 97) + '...' : name,
+                        description: `Server ID: ${doc.id}`,
+                        value: doc.id,
+                        emoji: icon ? undefined : undefined,
+                    });
+                    if (options.length >= 25) break;
+                }
+
+                const embed = new EmbedBuilder()
+                    .setColor(colors.none)
+                    .setTitle('Your Verified Servers')
+                    .setDescription(
+                        `You are verified on **${allDocs.length}** server${allDocs.length !== 1 ? 's' : ''}:\n\n` +
+                        description +
+                        '\nSelect a server from the dropdown below to unverify from it.'
+                    )
+                    .setFooter({ text: 'Unverifying removes you from that server\'s backup list.' });
+
+                const selectMenu = new StringSelectMenuBuilder()
+                    .setCustomId('unverifSelect')
+                    .setPlaceholder('Choose a server to unverify from...')
+                    .addOptions(options);
+
+                const row = new ActionRowBuilder().addComponents(selectMenu);
+
+                await inter.editReply({ embeds: [embed], components: [row] });
+            } catch (err) {
+                console.error('/myservers error:', err);
+                const reply = inter.deferred ? inter.editReply : inter.reply;
+                reply.call(inter, { content: emojis.warning + ' An unexpected error occurred.' }).catch(() => {});
+            }
+        }
         else if (cname === 'setlimit') {
             if (!await getPerms(inter.member, 5)) return inter.reply({ content: emojis.warning + " Insufficient Permission" });
             let options = inter.options.data
@@ -1310,7 +1365,24 @@ client.on('interactionCreate', async inter => {
     //BUTTONS
     else if (inter.isButton() || inter.isStringSelectMenu()) {
         let id = inter.customId
-        if (id.startsWith("unverifPrompt-")) {
+        if (id === 'unverifSelect') {
+            const guildId = inter.values[0];
+            const guild = await getGuild(guildId);
+            const guildName = guild ? guild.name : 'this server';
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('unverify-' + guildId).setStyle(ButtonStyle.Danger).setLabel('Yes, unverify me'),
+                new ButtonBuilder().setCustomId('cancel').setStyle(ButtonStyle.Secondary).setLabel('Cancel'),
+            );
+            await inter.update({
+                embeds: [new EmbedBuilder()
+                    .setColor(colors.red)
+                    .setTitle('Confirm Unverify')
+                    .setDescription(`Are you sure you want to unverify yourself from **${guildName}**?\n\nThis will remove you from their backup list and strip your verified role.`)
+                    .setThumbnail(guild?.iconURL() ?? null)],
+                components: [row]
+            });
+        }
+        else if (id.startsWith("unverifPrompt-")) {
             let guildId = id.replace('unverifPrompt-', '')
             let row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId('unverify-' + guildId).setStyle(ButtonStyle.Success).setLabel("Yes"),
