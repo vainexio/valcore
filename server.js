@@ -101,32 +101,17 @@ client.on("ready", async () => {
     tokenModel = mongoose.model("ValcoreBackup_Token", tokenSchema);
 
     if (slashCmd.register) {
-        let discordUrl = "https://discord.com/api/v10/applications/" + client.user.id + "/commands"
-        let headers = {
-            "Authorization": "Bot " + token,
-            "Content-Type": 'application/json'
-        }
-
-        for (let i in slashes) {
-            await sleep(4000)
-            let json = slashes[i]
-            let response = await fetch(discordUrl, {
-                method: 'post',
-                body: JSON.stringify(json),
-                headers: headers
-            });
-            console.log(response.status + ' ' + json.name)
-            response = await response.json();
-        }
-        for (let i in slashCmd.deleteSlashes) {
-            await sleep(4000)
-            let deleteUrl = "https://discord.com/api/v10/applications/" + client.user.id + "/commands/" + slashCmd.deleteSlashes[i]
-            let deleteRes = await fetch(deleteUrl, {
-                method: 'delete',
-                headers: headers
-            })
-            deleteRes = await deleteRes.json();
-            console.log(deleteRes.status)
+        const { REST, Routes } = require('discord.js');
+        const rest = new REST({ version: '10' }).setToken(token);
+        try {
+            console.log(`Registering ${slashes.length} slash command(s)...`);
+            const result = await rest.put(
+                Routes.applicationCommands(client.user.id),
+                { body: slashes }
+            );
+            console.log(`Successfully registered ${result.length} slash command(s).`);
+        } catch (err) {
+            console.error('Failed to register slash commands:', err);
         }
     }
     client.user.setPresence({ status: 'online', activities: [{ name: 'Users', type: ActivityType.Listening }] });
