@@ -502,8 +502,16 @@ client.on('interactionCreate', async inter => {
                         embeds: [new EmbedBuilder()
                             .setColor(colors.red)
                             .setTitle(`${emojis.warning} Access Denied`)
-                            .setDescription("You are not on the whitelist. Purchase access to use Valcore Backup.")],
-                        ephemeral: true
+                            .setDescription("Command not permitted. (If you have whitelist, make sure to run this commad in the SLOOPIES server)")],
+                    });
+                }
+
+                if (!hasRole(inter.member, ["Can Register"])) {
+                    return inter.reply({
+                        embeds: [new EmbedBuilder()
+                            .setColor(colors.red)
+                            .setTitle(`${emojis.warning} Access Denied`)
+                            .setDescription("You do not have permission to register a server.")],
                     });
                 }
 
@@ -534,10 +542,11 @@ client.on('interactionCreate', async inter => {
                     return inter.editReply({ content: emojis.warning + ' **' + guild.name + '** is already registered. Use `/status` to view its info.' });
                 }
 
+                /*
                 const docAuthor = await guildModel.findOne({ author: inter.user.id });
                 if (docAuthor && inter.user.id !== '497918770187075595') {
                     return inter.editReply({ content: emojis.warning + ' You already have a registered server. Each user may only register **1 server**.' });
-                }
+                }*/
 
                 const newDoc     = new guildModel(guildSchema);
                 newDoc.id        = guild.id;
@@ -559,13 +568,17 @@ client.on('interactionCreate', async inter => {
                     .setFooter({ text: "Do not share your key with anyone." });
 
                 await inter.user.send({ content: "```\n" + newDoc.key + "\n```", embeds: [keyEmbed] })
-                    .then(() => inter.editReply({
-                        embeds: [new EmbedBuilder()
-                            .setColor(colors.green)
-                            .setTitle(`${emojis.on} Registration Successful`)
-                            .setDescription("**" + guild.name + "** has been registered.\n\n" + emojis.check + " Your access key was sent to your **DMs**. Save it externally!")
-                            .setThumbnail(guild.iconURL())]
-                    }))
+                    .then(() => {
+                        inter.editReply({
+                            embeds: [new EmbedBuilder()
+                                .setColor(colors.green)
+                                .setTitle(`${emojis.on} Registration Successful`)
+                                .setDescription("**" + guild.name + "** has been registered.\n\n" + emojis.check + " Your access key was sent to your **DMs**. Save it externally!")
+                                .setThumbnail(guild.iconURL())]
+                        })
+                        removeRole(inter.member,['Can Register'])
+                    }
+                         )
                     .catch(async err => {
                         console.log('register DM error:', err);
                         await guildModel.deleteOne({ key: newDoc.key });
