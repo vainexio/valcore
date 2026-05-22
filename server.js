@@ -511,212 +511,466 @@ client.on('interactionCreate', async inter => {
         //
         // Setup
         if (cname === 'register') {
-            if (!await getPerms(inter.member, 2)) return inter.reply({ content: emojis.warning + " You are not on the whitelist" });
-            let options = inter.options.data
-            //
-            let guildId = options.find(a => a.name === 'guild_id')
-            let guild = await getGuild(guildId.value)
-            if (!guild) return inter.reply({ content: emojis.warning + ' Cannot find guild. Make sure that the bot is on the server that you wish to register' })
-            if (!await guildPerms(await getMember(inter.user.id, guild), [PermissionFlagsBits.ManageGuild])) return inter.reply({ content: emojis.warning + ' You must have the **MANAGE SERVER** permission in the server that you want to register' });
+            try {
+                if (!await getPerms(inter.member, 2)) {
+                    return inter.reply({
+                        embeds: [new EmbedBuilder()
+                            .setColor(colors.red)
+                            .setTitle(`${emojis.warning} Access Denied`)
+                            .setDescription("You are not on the whitelist. Purchase access to use Valcore Backup.")],
+                        ephemeral: true
+                    });
+                }
 
-            let doc = await guildModel.findOne({ id: guild.id })
-            if (doc) return inter.reply({ content: emojis.warning + ' This guild was already registered.' })
-            let docAuthor = await guildModel.findOne({ author: inter.user.id })
-            if (docAuthor && inter.user.id !== '497918770187075595') return inter.reply({ content: emojis.warning + ' You are limited to register 1 only.' })
+                await inter.deferReply({ ephemeral: true });
 
-            let newDoc = new guildModel(guildSchema)
-            newDoc.id = guild.id
-            newDoc.key = makeCode(30)
-            newDoc.author = inter.user.id
-            newDoc.maxTokens = config.guildMaxtokens
-            newDoc.verifiedRole = "Backup"
-            await newDoc.save()
+                const options = inter.options.data;
+                const guildIdOpt = options.find(a => a.name === 'guild_id');
 
-            await inter.reply({ content: emojis.on + " Your guild was registered!" })
+                if (!guildIdOpt?.value || !/^\d{17,20}$/.test(guildIdOpt.value)) {
+                    return inter.editReply({ content: emojis.warning + ' Please provide a valid server ID (17–20 digit number).' });
+                }
 
-            let embed = new EmbedBuilder()
-                .addFields(
-                    { name: "Generated Key", value: "This key was generated for the first time. Make sure you save it externally!" },
-                    { name: "Data", value: "Guild ID `" + guild.id + "`\nGuild Name `" + guild.name + "`" }
-                )
-                .setColor(theme)
-            await inter.user.send({ content: newDoc.key, embeds: [embed], ephemeral: true })
-                .then(msg => inter.followUp({ content: emojis.check + ' Your access key has been sent via direct message' }))
-                .catch(async err => {
-                    console.log(err)
-                    inter.followUp({ content: emojis.warning + ' Unable to send access key via direct message\n```diff\n-' + err + '```' })
-                    await guildModel.deleteOne({ key: newDoc.key })
-                })
+                const guild = await getGuild(guildIdOpt.value);
+                if (!guild) {
+                    return inter.editReply({ content: emojis.warning + ' Server not found. Make sure **Valcore** is already added to that server.' });
+                }
+
+                const memberInGuild = await getMember(inter.user.id, guild);
+                if (!memberInGuild) {
+                    return inter.editReply({ content: emojis.warning + ' You must be a member of the server you want to register.' });
+                }
+                if (!await guildPerms(memberInGuild, [PermissionFlagsBits.ManageGuild])) {
+                    return inter.editReply({ content: emojis.warning + ' You need the **Manage Server** permission in **' + guild.name + '** to register it.' });
+                }
+
+                const existing = await guildModel.findOne({ id: guild.id });
+                if (existing) {
+                    return inter.editReply({ content: emojis.warning + ' **' + guild.name + '** is already registered. Use `/status` to view its info.' });
+                }
+
+                const docAuthor = await guildModel.findOne({ author: inter.user.id });
+                if (docAuthor && inter.user.id !== '497918770187075595') {
+                    return inter.editReply({ content: emojis.warning + ' You already have a registered server. Each user may only register **1 server**.' });
+                }
+
+                const newDoc     = new guildModel(guildSchema);
+                newDoc.id        = guild.id;
+                newDoc.key       = makeCode(30);
+                newDoc.author    = inter.user.id;
+                newDoc.maxTokens = config.guildMaxtokens;
+                newDoc.verifiedRole = "Backup";
+                await newDoc.save();
+
+                const keyEmbed = new EmbedBuilder()
+                    .setColor(theme)
+                    .setTitle(`${emojis.check} Server Registered`)
+                    .setDescription("Your access key is below. **Store it somewhere safe — you will need it to use Valcore commands.**")
+                    .addFields(
+                        { name: "Server", value: guild.name + " (`" + guild.id + "`)" },
+                        { name: "Max Members", value: String(config.guildMaxtokens) },
+                        { name: "Next Steps", value: "• Use `/setrole` to set your verified role\n• Use `/verify_link` to get a verification link\n• Use `/status` to view your server info" }
+                    )
+                    .setFooter({ text: "Do not share your key with anyone." });
+
+                await inter.user.send({ content: "```\n" + newDoc.key + "\n```", embeds: [keyEmbed] })
+                    .then(() => inter.editReply({
+                        embeds: [new EmbedBuilder()
+                            .setColor(colors.green)
+                            .setTitle(`${emojis.on} Registration Successful`)
+                            .setDescription("**" + guild.name + "** has been registered.\n\n" + emojis.check + " Your access key was sent to your **DMs**. Save it externally!")
+                            .setThumbnail(guild.iconURL())]
+                    }))
+                    .catch(async err => {
+                        console.log('register DM error:', err);
+                        await guildModel.deleteOne({ key: newDoc.key });
+                        inter.editReply({ content: emojis.warning + " Registration cancelled — couldn't send you a DM. Please allow DMs from server members and try again." });
+                    });
+            } catch (err) {
+                console.error('/register error:', err);
+                const msg = inter.deferred ? inter.editReply : inter.reply;
+                msg.call(inter, { content: emojis.warning + ' An unexpected error occurred. Please try again.' }).catch(() => {});
+            }
         }
         else if (cname === 'unregister') {
-            let options = inter.options.data
-            //
-            let key = options.find(a => a.name === 'key')
-            await inter.deferReply();
+            try {
+                const options = inter.options.data;
+                const key = options.find(a => a.name === 'key');
+                await inter.deferReply({ ephemeral: true });
 
-            let doc = await guildModel.findOne({ key: key.value })
-            let guild = await getGuild(doc.id)
-            if (doc) {
-                let embed = new EmbedBuilder()
-                    .setDescription(emojis.off + ' Your guild is flagged for termination')
+                const doc = await guildModel.findOne({ key: key.value });
+                if (!doc) return inter.editReply({ content: emojis.warning + ' Invalid access key. Double-check your key and try again.' });
+
+                const guild = await getGuild(doc.id);
+                const embed = new EmbedBuilder()
                     .setColor(colors.red)
+                    .setTitle(`${emojis.warning} Confirm Unregister`)
+                    .setDescription("This will **permanently delete** all backup data for this server.\nThis action **cannot** be undone.")
                     .addFields(
-                        { name: "Guild", value: "Guild ID `" + guild?.id + "`\nGuild Name `" + guild?.name + "`" },
-                        { name: "Registered Users", value: doc.users.length.toString(), inline: true },
-                        { name: "Author", value: '<@' + doc.author + '>', inline: true },
-                        { name: "Access Key", value: '```diff\n- ' + doc.key.substr(0, doc.key.length - 20) + '```' },
+                        { name: "Server", value: guild ? guild.name + " (`" + guild.id + "`)" : "`" + doc.id + "`" },
+                        { name: "Verified Members Stored", value: doc.users.length.toString(), inline: true },
+                        { name: "Registered By", value: '<@' + doc.author + '>', inline: true },
                     )
+                    .setFooter({ text: "Press Unregister below to confirm." });
 
-                let row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder().setCustomId('unregisPrompt-' + inter.user.id).setStyle(ButtonStyle.Danger).setLabel("Unregister").setEmoji(emojis.warning),
+                const row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder().setCustomId('unregisPrompt-' + inter.user.id).setStyle(ButtonStyle.Danger).setLabel("Unregister"),
                 );
-                await inter.editReply({ content: doc.id, embeds: [embed], components: [row], ephemeral: true })
-            } else {
-                await inter.editReply({ content: emojis.warning + ' Invalid access key' })
+                await inter.editReply({ content: doc.id, embeds: [embed], components: [row], ephemeral: true });
+            } catch (err) {
+                console.error('/unregister error:', err);
+                const reply = inter.deferred ? inter.editReply : inter.reply;
+                reply.call(inter, { content: emojis.warning + ' An unexpected error occurred.' }).catch(() => {});
             }
         }
 
         // Config
         else if (cname === 'unverify_on_leave') {
-            let options = inter.options.data
-            //
-            let key = options.find(a => a.name === 'key')
-            let enabled = options.find(a => a.name === 'enabled')
-            await inter.deferReply();
+            try {
+                const options = inter.options.data;
+                const key     = options.find(a => a.name === 'key');
+                const enabled = options.find(a => a.name === 'enabled');
+                await inter.deferReply({ ephemeral: true });
 
-            let doc = await guildModel.findOne({ key: key.value })
-            if (doc) {
-                doc.unverifyOnLeave = enabled.value
-                let reply = ""
-                if (doc.unverifyOnLeave) reply = emojis.on + " Unverify on leave is now **enabled**"
-                else reply = emojis.off + " Unverify on leave is now **disabled**"
+                const doc = await guildModel.findOne({ key: key.value });
+                if (!doc) return inter.editReply({ content: emojis.warning + ' Invalid access key.' });
 
-                await inter.editReply({ content: reply })
-                await doc.save()
-            } else {
-                await inter.editReply({ content: emojis.warning + ' Invalid access key' })
+                doc.unverifyOnLeave = enabled.value;
+                await doc.save();
+
+                const embed = new EmbedBuilder()
+                    .setColor(doc.unverifyOnLeave ? colors.green : colors.red)
+                    .setDescription(
+                        doc.unverifyOnLeave
+                            ? emojis.on + " **Unverify on Leave** is now **enabled**.\nMembers will be removed from your verified list when they leave the server."
+                            : emojis.off + " **Unverify on Leave** is now **disabled**.\nMembers will stay in your verified list even after leaving."
+                    );
+                await inter.editReply({ embeds: [embed] });
+            } catch (err) {
+                console.error('/unverify_on_leave error:', err);
+                const reply = inter.deferred ? inter.editReply : inter.reply;
+                reply.call(inter, { content: emojis.warning + ' An unexpected error occurred.' }).catch(() => {});
             }
         }
         else if (cname === 'status') {
-            let options = inter.options.data
-            //
-            let key = options.find(a => a.name === 'key')
-            await inter.deferReply({ ephemeral: true })
+            try {
+                const options = inter.options.data;
+                const key = options.find(a => a.name === 'key');
+                await inter.deferReply({ ephemeral: true });
 
-            let doc = await guildModel.findOne({ key: key?.value })
-            if (!doc) doc = await guildModel.findOne({ author: inter.user.id })
-            if (!doc) return inter.reply({ content: emojis.warning + ' Invalid access key' })
-            let guild = await getGuild(doc.id)
+                let doc = key?.value ? await guildModel.findOne({ key: key.value }) : null;
+                if (!doc) doc = await guildModel.findOne({ author: inter.user.id });
+                if (!doc) {
+                    return inter.editReply({
+                        content: emojis.warning + " No registered server found for your account. Provide your access key or use `/register` to get started."
+                    });
+                }
 
-            let embed = new EmbedBuilder()
-                .setColor(colors.none)
-                .setTitle(`${guild?.name}`)
-                .setThumbnail(guild?.iconURL())
-                .setDescription("Run /restore_members to see instructions how to restore members on new server")
-                .addFields(
-                    {
-                        name: "Server Information",
-                        value:
-                            emojis.on + " Verified Users: " + doc.users.length + "/" + doc.maxTokens + "\n" +
-                            emojis.on + " Author: <@" + doc.author + ">\n" +
-                            (doc.verifiedRole !== "Backup" ? emojis.on + " Verified Role: <@&" + doc.verifiedRole + ">\n" : emojis.off + " Verified Role: </setrole:1248659549066367069>\n") +
-                            (doc.unverifyOnLeave ? emojis.on + " UnverifyOnLeave: Enabled" : emojis.off + " </unverify_on_leave:1391426611446026361>: Disabled")
-                        , inline: true
-                    },
-                    { name: "Access Key", value: `\`\`\`yaml\n${doc.key}\`\`\`` },
-                )
-                .setFooter({ text: "Do not share your access key with anyone!" })
-            await inter.editReply({ embeds: [embed], ephemeral: true })
+                const guild = await getGuild(doc.id);
+                const usedPct = Math.round((doc.users.length / doc.maxTokens) * 100);
+
+                const embed = new EmbedBuilder()
+                    .setColor(colors.none)
+                    .setTitle(guild?.name || 'Unknown Server')
+                    .setThumbnail(guild?.iconURL() || null)
+                    .setDescription("Use `/restore_members` for instructions on moving your members to a new server.")
+                    .addFields(
+                        {
+                            name: "Verified Members",
+                            value:
+                                "**" + doc.users.length + " / " + doc.maxTokens + "** (" + usedPct + "%)\n" +
+                                (doc.verifiedRole !== "Backup"
+                                    ? emojis.on + " Role: <@&" + doc.verifiedRole + ">"
+                                    : emojis.warning + " No role set — use `/setrole`") + "\n" +
+                                (doc.unverifyOnLeave ? emojis.on + " Unverify on Leave: **On**" : emojis.off + " Unverify on Leave: **Off**"),
+                            inline: false
+                        },
+                        { name: "Registered By", value: "<@" + doc.author + ">", inline: true },
+                        { name: "Server ID", value: "`" + doc.id + "`", inline: true },
+                        { name: "Access Key", value: "```\n" + doc.key + "\n```" }
+                    )
+                    .setFooter({ text: "Keep your access key private — do not share it with anyone." });
+
+                await inter.editReply({ embeds: [embed] });
+            } catch (err) {
+                console.error('/status error:', err);
+                const reply = inter.deferred ? inter.editReply : inter.reply;
+                reply.call(inter, { content: emojis.warning + ' An unexpected error occurred.' }).catch(() => {});
+            }
         }
         else if (cname === 'setrole') {
-            let options = inter.options.data
-            let role = options.find(a => a.name === 'role')
-            let key = options.find(a => a.name === 'key')
-            let doc = await guildModel.findOne({ key: key.value })
-            await inter.reply({ content: emojis.loading + " Changing role", ephemeral: true })
-            if (!doc) return inter.editReply({ content: emojis.warning + ' Invalid Key', ephemeral: true })
+            try {
+                const options = inter.options.data;
+                const role = options.find(a => a.name === 'role');
+                const key  = options.find(a => a.name === 'key');
+                await inter.deferReply({ ephemeral: true });
 
-            let oldLimit = doc.verifiedRole
-            doc.verifiedRole = role.role.id
-            await doc.save()
+                if (!role?.role?.id) return inter.editReply({ content: emojis.warning + ' Please select a valid role.' });
 
-            let embed = new EmbedBuilder()
-                .setDescription(emojis.on + " Successfully changed verified role from " + (oldLimit !== "Backup" ? "<@&" + oldLimit + ">" : oldLimit) + " to **" + role.role.toString() + "**")
-                .setColor(theme)
+                const doc = await guildModel.findOne({ key: key.value });
+                if (!doc) return inter.editReply({ content: emojis.warning + ' Invalid access key.' });
 
-            await inter.followUp({ embeds: [embed] })
+                const oldRole = doc.verifiedRole;
+                doc.verifiedRole = role.role.id;
+                await doc.save();
+
+                const embed = new EmbedBuilder()
+                    .setColor(theme)
+                    .setTitle(`${emojis.on} Verified Role Updated`)
+                    .addFields(
+                        { name: "Previous Role", value: oldRole !== "Backup" ? "<@&" + oldRole + ">" : "`" + oldRole + "` (default)", inline: true },
+                        { name: "New Role", value: role.role.toString(), inline: true },
+                    )
+                    .setDescription("Members who verify will now receive " + role.role.toString() + ".\nMake sure Valcore's bot role is **above** this role in Server Settings → Roles.");
+
+                await inter.editReply({ embeds: [embed] });
+            } catch (err) {
+                console.error('/setrole error:', err);
+                const reply = inter.deferred ? inter.editReply : inter.reply;
+                reply.call(inter, { content: emojis.warning + ' An unexpected error occurred.' }).catch(() => {});
+            }
         }
 
         // Backup
         else if (cname === 'restore_members') {
-            let ch = await getChannel(config.channels.templates)
-            let foundMsg = await ch.messages.fetch('1391422472942911488')
-            await inter.reply(foundMsg.content)
+            try {
+                await inter.deferReply({ ephemeral: true });
+
+                const embed = new EmbedBuilder()
+                    .setColor(theme)
+                    .setTitle("🔄 How to Restore Members to a New Server")
+                    .setDescription("Follow these steps **in order** to move your verified members to a new server. Make sure Valcore is added to **both** servers before starting.")
+                    .addFields(
+                        {
+                            name: "Step 1 — Register your new server",
+                            value: "Run `/register` with your **new server's ID**.\nThis creates a fresh backup entry for the new server.",
+                        },
+                        {
+                            name: "Step 2 — Transfer your data",
+                            value: "Run `/transfer` using your **current access key** and the **new server ID**.\nThis moves all your verified members and generates a new key.",
+                        },
+                        {
+                            name: "Step 3 — Run Join All",
+                            value: "Run `/joinall` with your **new access key** and **new server ID** as the target.\nThis pulls all verified members into the new server.",
+                        },
+                        {
+                            name: "Step 4 — Restore Roles (optional)",
+                            value: "Run `/addroles` to re-assign the verified role to members already in the new server.\nUseful if some members joined before you ran `/joinall`.",
+                        },
+                        {
+                            name: "⚠️ Important Notes",
+                            value:
+                                "• Members must have their **Discord DMs open** to receive the join invitation.\n" +
+                                "• Members whose tokens have expired will be **automatically cleaned up**.\n" +
+                                "• Save your new key from Step 2 — use `/status` to view it anytime.",
+                        }
+                    )
+                    .setFooter({ text: "Need help? Contact the server admin or use /help." });
+
+                await inter.editReply({ embeds: [embed] });
+            } catch (err) {
+                console.error('/restore_members error:', err);
+                const reply = inter.deferred ? inter.editReply : inter.reply;
+                reply.call(inter, { content: emojis.warning + ' An unexpected error occurred.' }).catch(() => {});
+            }
         }
         else if (cname === 'transfer') {
-            let options = inter.options.data
-            //
-            let newServer = options.find(a => a.name === 'new_server_id')
-            let key = options.find(a => a.name === 'key')
-            let doc = await guildModel.findOne({ key: key.value })
+            try {
+                const options    = inter.options.data;
+                const newServer  = options.find(a => a.name === 'new_server_id');
+                const key        = options.find(a => a.name === 'key');
+                await inter.deferReply({ ephemeral: true });
 
-            await inter.reply({ content: emojis.loading + ' Transferring data. Please wait!', ephemeral: true })
-            //
-            let whitelisted = await whitelist.findOne({ serverId: doc.id, type: "backup" })
-            if (!whitelisted) return inter.editReply(emojis.warning + " Server not whitelisted.")
-            //
-            let guild = newServer ? await getGuild(newServer.value) : inter.guild
-            if (!doc || !guild) return inter.channel.send({ content: emojis.warning + ' Invalid guild/key' })
-            let existingGuild = await guildModel.findOne({ id: guild.id })
-            if (existingGuild && existingGuild.id !== doc.id) return inter.channel.send({ content: emojis.warning + ' Cannot transfer to an already registered guild.' })
-            let embed = new EmbedBuilder()
-                .addFields(
-                    { name: 'Guild Transfer', value: emojis.off + ' OLD\nID `' + doc.id + '`\n\n' + emojis.on + ' NEW\nID `' + newServer.value + '`\nName **' + guild.name + '**' },
-                    { name: 'Author Transfer', value: emojis.off + ' OLD\nID `' + doc.author + '`\n\n' + emojis.on + ' NEW\nID `' + inter.user.id + '`\nPing ' + inter.user.toString() },
-                )
-                .setColor(colors.blue)
+                if (!newServer?.value || !/^\d{17,20}$/.test(newServer.value)) {
+                    return inter.editReply({ content: emojis.warning + ' Please provide a valid new server ID.' });
+                }
 
-            doc.id = guild.id
-            doc.author = inter.user.id
-            doc.key = makeCode(30)
+                const doc = await guildModel.findOne({ key: key.value });
+                if (!doc) return inter.editReply({ content: emojis.warning + ' Invalid access key.' });
 
-            whitelisted.serverId = guild.id
-            whitelisted.userId = inter.user.id
-            await whitelisted.save()
-            await doc.save()
+                const whitelisted = await whitelist.findOne({ serverId: doc.id, type: "backup" });
+                if (!whitelisted) return inter.editReply({ content: emojis.warning + ' Your current server is not whitelisted. Contact support.' });
 
-            await inter.channel.send({ content: emojis.check + ' Data Transferred', embeds: [embed] })
+                const guild = await getGuild(newServer.value);
+                if (!guild) return inter.editReply({ content: emojis.warning + ' New server not found. Make sure Valcore is added to it first.' });
 
-            let embed2 = new EmbedBuilder()
-                .addFields(
-                    { name: "Generated Key", value: "Your old key was deleted and a new key was generated. Make sure you save it externally!" },
-                    { name: "Data", value: "Guild ID `" + guild.id + "`\nGuild Name `" + guild.name + "`" }
-                )
-                .setColor(theme)
+                const existingGuild = await guildModel.findOne({ id: guild.id });
+                if (existingGuild && existingGuild.id !== doc.id) {
+                    return inter.editReply({ content: emojis.warning + ' **' + guild.name + '** is already registered under a different account.' });
+                }
 
-            await inter.user.send({ content: doc.key, embeds: [embed2] })
-                .then(msg => inter.followUp({ content: emojis.check + ' Your new access key has been sent via direct message' }))
-                .catch(async err => {
-                    console.log(err)
-                    inter.followUp({ content: emojis.warning + ' Unable to send access key via direct message. Sending here...\n' + doc.key, embeds: [embed2], ephemeral: true })
-                })
+                const oldGuildId  = doc.id;
+                const oldAuthorId = doc.author;
+
+                doc.id     = guild.id;
+                doc.author = inter.user.id;
+                doc.key    = makeCode(30);
+
+                whitelisted.serverId = guild.id;
+                whitelisted.userId   = inter.user.id;
+                await whitelisted.save();
+                await doc.save();
+
+                const embed = new EmbedBuilder()
+                    .setColor(colors.blue)
+                    .setTitle(`${emojis.check} Data Transferred Successfully`)
+                    .addFields(
+                        { name: "Previous Server", value: "`" + oldGuildId + "`", inline: true },
+                        { name: "New Server", value: guild.name + " (`" + guild.id + "`)", inline: true },
+                        { name: "\u200b", value: "\u200b" },
+                        { name: "Previous Author", value: "<@" + oldAuthorId + ">", inline: true },
+                        { name: "New Author", value: inter.user.toString(), inline: true },
+                        { name: "Verified Members", value: doc.users.length.toString() + " members carried over", inline: false },
+                    )
+                    .setDescription("A **new access key** has been generated and sent to your DMs. Your old key is now invalid.")
+                    .setFooter({ text: "Save your new key — you will need it for all future commands." });
+
+                await inter.channel.send({ embeds: [embed] });
+
+                const keyEmbed = new EmbedBuilder()
+                    .setColor(theme)
+                    .setTitle("New Access Key Generated")
+                    .setDescription("Your old key has been replaced. **Store this somewhere safe.**")
+                    .addFields({ name: "New Server", value: guild.name + " (`" + guild.id + "`)" });
+
+                await inter.user.send({ content: "```\n" + doc.key + "\n```", embeds: [keyEmbed] })
+                    .then(() => inter.editReply({ content: emojis.check + ' Transfer complete. Your new key was sent to your DMs.' }))
+                    .catch(async err => {
+                        console.log('transfer DM error:', err);
+                        inter.editReply({ content: emojis.warning + ' Transfer complete but DMs are closed.\n```\n' + doc.key + '\n```\nSave this now!', embeds: [keyEmbed] });
+                    });
+            } catch (err) {
+                console.error('/transfer error:', err);
+                const reply = inter.deferred ? inter.editReply : inter.reply;
+                reply.call(inter, { content: emojis.warning + ' An unexpected error occurred.' }).catch(() => {});
+            }
         }
+
+        else if (cname === 'getkey') {
+            try {
+                await inter.deferReply({ ephemeral: true });
+
+                const doc = await guildModel.findOne({ author: inter.user.id });
+                if (!doc) {
+                    return inter.editReply({
+                        content: emojis.warning + " No registered server found under your account. Use `/register` to register your server first.",
+                    });
+                }
+
+                const guild = await getGuild(doc.id);
+                const keyEmbed = new EmbedBuilder()
+                    .setColor(theme)
+                    .setTitle(`${emojis.on} Your Access Key`)
+                    .setDescription("Your access key has been sent to your **DMs**.")
+                    .addFields(
+                        { name: "Server", value: guild ? guild.name + " (`" + guild.id + "`)" : "`" + doc.id + "`" },
+                        { name: "Verified Members", value: doc.users.length + " / " + doc.maxTokens },
+                    )
+                    .setFooter({ text: "Do not share your key with anyone." });
+
+                const dmEmbed = new EmbedBuilder()
+                    .setColor(theme)
+                    .setTitle("Your Valcore Backup Key")
+                    .setDescription("You requested your access key. If you did not request this, please contact the Valcore admin.")
+                    .addFields(
+                        { name: "Server", value: guild ? guild.name + " (`" + guild.id + "`)" : "`" + doc.id + "`" },
+                        { name: "Access Key", value: "```\n" + doc.key + "\n```" },
+                    )
+                    .setFooter({ text: "Keep this private. Do not share it with anyone." });
+
+                await inter.user.send({ embeds: [dmEmbed] })
+                    .then(() => inter.editReply({ embeds: [keyEmbed] }))
+                    .catch(err => {
+                        console.log('getkey DM error:', err);
+                        inter.editReply({ content: emojis.warning + " Couldn't send a DM. Please enable DMs from server members and try again." });
+                    });
+            } catch (err) {
+                console.error('/getkey error:', err);
+                const reply = inter.deferred ? inter.editReply : inter.reply;
+                reply.call(inter, { content: emojis.warning + ' An unexpected error occurred.' }).catch(() => {});
+            }
+        }
+
+        else if (cname === 'help') {
+            try {
+                const embed = new EmbedBuilder()
+                    .setColor(theme)
+                    .setTitle("📖 Valcore Backup — Setup Guide")
+                    .setDescription("Follow these steps to set up Valcore Backup on your server. All commands should be run in a channel where the bot is visible.")
+                    .addFields(
+                        {
+                            name: "Step 1 — Add Valcore to your server",
+                            value: "Open <@968378766260846713>'s profile and click **Add to Server**. Make sure to grant it **Administrator** permissions.",
+                        },
+                        {
+                            name: "Step 2 — Register your server",
+                            value: "Run `/register` and enter your **Server ID** (right-click your server → Copy Server ID).\nYou will receive your access key via DM. **Save it!**",
+                        },
+                        {
+                            name: "Step 3 — Set your verified role",
+                            value: "Run `/setrole` with your chosen role.\n⚠️ Make sure Valcore's role is **above** your verified role in Server Settings → Roles, or it won't be able to assign it.",
+                        },
+                        {
+                            name: "Step 4 — Get your verification link",
+                            value: "Run `/verify_link` in the channel you want to post the link in.\nMembers click **Verify** and authenticate with Discord. They'll be added to your backup automatically.",
+                        },
+                        {
+                            name: "Step 5 — Check your backup",
+                            value: "Run `/status` at any time to see how many members are backed up and review your settings.",
+                        },
+                        {
+                            name: "🔁 Restoring Members",
+                            value: "If your server gets nuked or deleted, use `/restore_members` for full step-by-step recovery instructions.",
+                        },
+                        {
+                            name: "🔑 Lost Your Key?",
+                            value: "Use `/getkey` and your key will be sent to your DMs.",
+                        },
+                        {
+                            name: "📋 Tips",
+                            value:
+                                "• Store your key in a notepad, password manager, or DM yourself.\n" +
+                                "• Use `/unverify_on_leave` to auto-clean members who leave.\n" +
+                                "• Use `/status` to view your key at any time.",
+                        }
+                    )
+                    .setFooter({ text: "Valcore Backup — for any issues, contact the administrator." });
+
+                await inter.reply({ embeds: [embed], ephemeral: true });
+            } catch (err) {
+                console.error('/help error:', err);
+                inter.reply({ content: emojis.warning + ' An unexpected error occurred.' }).catch(() => {});
+            }
+        }
+
         else if (cname === 'joinall') {
             //
-            let whitelisted = await whitelist.findOne({ serverId: inter.guild.id, type: "backup" })
-            if (!whitelisted) return inter.reply(emojis.warning + " Server not whitelisted. Here's why:\n- Use this command on your main server or use /transer cmd if you no longer have access to it.")
-            //
-            let options = inter.options.data;
-            let key = options.find(a => a.name === 'key');
-            let reason = options.find(a => a.name === 'message');
-            let guildId = options.find(a => a.name === 'target_server_id');
-            let guild = await getGuild(guildId.value);
+            const whitelisted = await whitelist.findOne({ serverId: inter.guild.id, type: "backup" });
+            if (!whitelisted) {
+                return inter.reply({
+                    embeds: [new EmbedBuilder()
+                        .setColor(colors.red)
+                        .setTitle(`${emojis.warning} Server Not Whitelisted`)
+                        .setDescription("This server is not whitelisted. Run this command from your **registered main server**, or use `/transfer` if you no longer have access to it.")],
+                    ephemeral: true
+                });
+            }
 
-            if (!guild) return inter.reply({ content: emojis.warning + ' Invalid guild ID was provided', ephemeral: true });
+            const options = inter.options.data;
+            const key     = options.find(a => a.name === 'key');
+            const reason  = options.find(a => a.name === 'message');
+            const guildId = options.find(a => a.name === 'target_server_id');
 
-            let doc = await guildModel.findOne({ key: key.value });
-            if (!doc) return inter.reply({ content: emojis.warning + ' Invalid access key', ephemeral: true });
-            if (doc.users.length === 0) return inter.reply({ content: emojis.warning + ' No users have yet verified to your server', ephemeral: true });
+            if (!guildId?.value || !/^\d{17,20}$/.test(guildId.value)) {
+                return inter.reply({ content: emojis.warning + ' Please provide a valid target server ID.', ephemeral: true });
+            }
+
+            const guild = await getGuild(guildId.value);
+            if (!guild) return inter.reply({ content: emojis.warning + ' Target server not found. Make sure Valcore is added to it.', ephemeral: true });
+
+            const doc = await guildModel.findOne({ key: key.value });
+            if (!doc) return inter.reply({ content: emojis.warning + ' Invalid access key.', ephemeral: true });
+            if (doc.users.length === 0) return inter.reply({ content: emojis.warning + ' No verified members found in your backup. Members need to verify first.', ephemeral: true });
 
             if (joinDebounce) return inter.reply(emojis.warning + " Bot is currently busy with other `joinall` commands. Please try again later.");
             joinDebounce = true;
@@ -795,21 +1049,42 @@ client.on('interactionCreate', async inter => {
                 }
             }
 
-            const errorsData = fs.writeFileSync('errors-data.txt', errors, 'utf8');
+            fs.writeFileSync('errors-data.txt', errors, 'utf8');
             toDelete.sort((a, b) => b - a);
             for (let i in toDelete) {
                 let index = toDelete[i];
                 doc.users.splice(index, 1);
             }
             joinDebounce = false;
-            await inter.channel.send({ content: emojis.check + ' Success: ' + success + '\n' + emojis.x + ' Deauthorized: ' + failed + '\n' + emojis.on + ' Already in Server: ' + already + '\n🔑 Total Tokens: ' + doc.users.length });
-            await safeSend(inter.channel, "**Errors Report**\n\n" + errorsData);
             await doc.save();
+
+            const reportEmbed = new EmbedBuilder()
+                .setColor(failed === 0 ? colors.green : success > 0 ? colors.orange : colors.red)
+                .setTitle(`${emojis.check} Join All — Complete`)
+                .setDescription("Members have been processed for **" + guild.name + "**.")
+                .addFields(
+                    { name: emojis.check + " Joined",            value: String(success), inline: true },
+                    { name: emojis.on  + " Already in Server",   value: String(already), inline: true },
+                    { name: emojis.x  + " Deauthorized/Failed",  value: String(failed),  inline: true },
+                    { name: "🔑 Remaining Tokens",               value: String(doc.users.length), inline: true },
+                )
+                .setFooter({ text: failed > 0 ? "Deauthorized entries were cleaned from your backup automatically." : "All members processed successfully." });
+
+            await inter.channel.send({ embeds: [reportEmbed] });
+            if (errors.trim().length > 0) await safeSend(inter.channel, "**Error Log**\n```\n" + errors.slice(0, 1900) + "\n```");
         }
         else if (cname === 'join') {
             //
-            let whitelisted = await whitelist.findOne({ serverId: inter.guild.id, type: "backup" })
-            if (!whitelisted) return inter.reply(emojis.warning + " Server not whitelisted. Here's why:\n- Use this command on your main server or use /transer cmd if you no longer have access to it.")
+            const whitelisted = await whitelist.findOne({ serverId: inter.guild.id, type: "backup" });
+            if (!whitelisted) {
+                return inter.reply({
+                    embeds: [new EmbedBuilder()
+                        .setColor(colors.red)
+                        .setTitle(`${emojis.warning} Server Not Whitelisted`)
+                        .setDescription("This server is not whitelisted. Run this command from your **registered main server**, or use `/transfer` if you no longer have access to it.")],
+                    ephemeral: true
+                });
+            }
             //
             let options = inter.options.data;
             let key = options.find(a => a.name === 'key');
@@ -877,79 +1152,95 @@ client.on('interactionCreate', async inter => {
 
         // Misc
         else if (cname === 'addroles') {
-            //
-            let whitelisted = await whitelist.findOne({ serverId: inter.guild.id, type: "backup" })
-            if (!whitelisted) return inter.reply(emojis.warning + " Server not whitelisted. Here's why:\n- Use this command on your main server or use /transer cmd if you no longer have access to it.")
-            //
-            let options = inter.options.data
-            //
-            let key = options.find(a => a.name === 'key')
-
-            let doc = await guildModel.findOne({ key: key.value })
-            if (!doc) return inter.reply({ content: emojis.warning + ' Invalid Key', ephemeral: true })
-            if (doc.users.length === 0) return inter.reply({ content: emojis.warning + ' No users have yet verified to your server', ephemeral: true })
-            let failed = 0
-            let success = 0
-            let already = 0
-            let role = await getRole(doc.verifiedRole, inter.guild)
-            if (!role) await inter.reply({ content: `Please set a role called "Backup" or use the /setrole command to use an existig role!` })
-            await inter.reply({ content: emojis.loading + " Adding **backup** role to " + doc.users.length + " users", ephemeral: true })
-            for (let i in doc.users) {
-                let userId = doc.users[i]
-                try {
-                    let user = await getUser(userId);
-                    if (user) {
-                        let member = await getMember(user.id, inter.guild)
-                        if (member) {
-                            if (await hasRole(member, [role.id])) already++
-                            else {
-                                let notAdded = await addRole(member, [role.id], inter.guild)
-                                if (notAdded) failed++
-                                else success++
-                            }
-                        } else {
-                            failed++
-                        }
-                    }
-                } catch (err) {
-                    await tokenModel.deleteOne({ id: userId })
-                    console.log('Code error: ' + err)
-                    failed++
+            try {
+                const whitelisted = await whitelist.findOne({ serverId: inter.guild.id, type: "backup" });
+                if (!whitelisted) {
+                    return inter.reply({
+                        embeds: [new EmbedBuilder()
+                            .setColor(colors.red)
+                            .setTitle(`${emojis.warning} Server Not Whitelisted`)
+                            .setDescription("This server is not whitelisted. Run this command from your **registered main server**, or use `/transfer` if you no longer have access to it.")],
+                        ephemeral: true
+                    });
                 }
-                console.log(success + ', ' + already + ', ' + failed)
-            }
 
-            await inter.channel.send({ content: emojis.check + ' Added: ' + success + '\n' + emojis.x + ' Failed: ' + failed + '\n' + emojis.on + ' Already Added: ' + already })
+                const options = inter.options.data;
+                const key     = options.find(a => a.name === 'key');
+
+                const doc = await guildModel.findOne({ key: key.value });
+                if (!doc) return inter.reply({ content: emojis.warning + ' Invalid access key.', ephemeral: true });
+                if (doc.users.length === 0) return inter.reply({ content: emojis.warning + ' No verified members in your backup yet.', ephemeral: true });
+
+                const role = await getRole(doc.verifiedRole, inter.guild);
+                if (!role) return inter.reply({ content: emojis.warning + ' No verified role is set. Use `/setrole` first.', ephemeral: true });
+
+                await inter.reply({ content: emojis.loading + " Assigning the verified role to " + doc.users.length + " members...", ephemeral: true });
+
+                let failed = 0, success = 0, already = 0;
+                for (let i in doc.users) {
+                    const userId = doc.users[i];
+                    try {
+                        const user = await getUser(userId);
+                        if (user) {
+                            const member = await getMember(user.id, inter.guild);
+                            if (member) {
+                                if (await hasRole(member, [role.id])) already++;
+                                else {
+                                    const notAdded = await addRole(member, [role.id], inter.guild);
+                                    notAdded ? failed++ : success++;
+                                }
+                            } else { failed++; }
+                        }
+                    } catch (err) {
+                        await tokenModel.deleteOne({ id: userId });
+                        console.log('addroles error:', err);
+                        failed++;
+                    }
+                }
+
+                await inter.channel.send({
+                    embeds: [new EmbedBuilder()
+                        .setColor(failed === 0 ? colors.green : colors.orange)
+                        .setTitle(`${emojis.check} Add Roles — Complete`)
+                        .addFields(
+                            { name: emojis.check + " Role Assigned", value: String(success), inline: true },
+                            { name: emojis.on  + " Already Had Role", value: String(already), inline: true },
+                            { name: emojis.x  + " Failed",           value: String(failed),  inline: true },
+                        )]
+                });
+            } catch (err) {
+                console.error('/addroles error:', err);
+                inter.reply({ content: emojis.warning + ' An unexpected error occurred.' }).catch(() => {});
+            }
         }
         else if (cname === 'verify_link') {
-            //
-            let doc = await guildModel.findOne({ id: inter.guild.id })
-            if (!doc) return inter.reply({ content: emojis.warning + ' Unergistered guild ID' })
-            let guild = await getGuild(doc.id)
+            try {
+                const doc = await guildModel.findOne({ id: inter.guild.id });
+                if (!doc) return inter.reply({ content: emojis.warning + ' This server is not registered. Use `/register` first.', ephemeral: true });
+                const guild = await getGuild(doc.id);
 
-            let embed = new EmbedBuilder()
-                .setColor(colors.none)
-                .setTitle(`${guild?.name}`)
-                .setThumbnail(guild?.iconURL())
-                .addFields(
-                    {
-                        name: "Server Information",
-                        value:
-                            emojis.on + " Verified Users: " + doc.users.length + "/" +doc.maxTokens + "\n" +
-                            (doc.verifiedRole !== "Backup" ? emojis.on + " Verified Role: <@&" + doc.verifiedRole + ">\n" : emojis.off + " Verified Role: None\n") +
-                            (doc.unverifyOnLeave ? emojis.on + " UnverifyOnLeave: Enabled" : emojis.off + " UnverifyOnLeave: Disabled")
-                        , inline: true
-                    },
-                )
-                .setFooter({ text: "Click the button below to verify" })
+                const url = encodeURI('https://discord.com/oauth2/authorize?client_id=' + client.user.id + '&response_type=code&redirect_uri=' + process.env.live + '&scope=guilds.join+identify&state=' + doc.id + '-version' + config.version);
+                const row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder().setURL(url).setStyle(ButtonStyle.Link).setLabel("Verify"),
+                );
 
-            let row = null
-            let url = encodeURI('https://discord.com/oauth2/authorize?client_id=' + client.user.id + '&response_type=code&redirect_uri=' + process.env.live + '&scope=guilds.join+identify&state=' + doc.id + '-version' + config.version)
-            row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setURL(url).setStyle(ButtonStyle.Link).setLabel("Verify"),
-            );
+                const embed = new EmbedBuilder()
+                    .setColor(colors.none)
+                    .setTitle(guild?.name || 'Unknown Server')
+                    .setThumbnail(guild?.iconURL() || null)
+                    .setDescription("Share this embed in your server. Members click **Verify** to authorize and be added to your backup.")
+                    .addFields(
+                        { name: "Verified Members", value: doc.users.length + " / " + doc.maxTokens, inline: true },
+                        { name: "Verified Role", value: doc.verifiedRole !== "Backup" ? "<@&" + doc.verifiedRole + ">" : "Not set — use `/setrole`", inline: true },
+                        { name: "Unverify on Leave", value: doc.unverifyOnLeave ? "Enabled" : "Disabled", inline: true },
+                    )
+                    .setFooter({ text: "Members click Verify to authenticate with Discord." });
 
-            await inter.reply({ embeds: [embed], components: [row] })
+                await inter.reply({ embeds: [embed], components: [row] });
+            } catch (err) {
+                console.error('/verify_link error:', err);
+                inter.reply({ content: emojis.warning + ' An unexpected error occurred.' }).catch(() => {});
+            }
         }
         else if (cname === 'merge') {
             if (!await getPerms(inter.member, 5)) return inter.reply({ content: emojis.warning + " Insufficient Permission" });
@@ -1091,124 +1382,152 @@ function respond(res, data) {
     const htmlTemplate = fs.readFileSync('public/new-output.html', 'utf8');
 
     const modifiedHtml = htmlTemplate
-        .replace(/\$\{pageTitle\}/g, (data.guild?.name ? data.guild.name.toUpperCase() : 'ERROR').replace(/^(.{10}).+/, "$1..."))
+        .replace(/\$\{pageTitle\}/g, (data.guild?.name ? data.guild.name.toUpperCase() : 'VALCORE').replace(/^(.{20}).+/, "$1..."))
         .replace(/\$\{imageUrl\}/g, data.guild && data.guild.iconURL() ? data.guild.iconURL() : "https://upload.wikimedia.org/wikipedia/commons/3/37/Sad-face.png")
         .replace(/\$\{bannerUrl\}/g, data.guild && data.guild.bannerURL() ? data.guild.bannerURL({ size: 1024, forceStatic: false }) : "")
         .replace(/\$\{subtext\}/g, data.text.toUpperCase())
         .replace(/\$\{subtextColor\}/g, data.color)
-        .replace(/\$\{subtext2\}/g, data.text2 ? data.text2.toUpperCase() : '');
+        .replace(/\$\{subtext2\}/g, data.text2 ? data.text2 : '');
 
     res.send(modifiedHtml);
 }
-app.get('/backup', async function (req, res) {
-    if (!req.query.state) return respond(res, { text: "Unknown server ID", color: '#ff4b4b' })
-    if (!req.query.state.includes('-version' + config.version)) return respond(res, { text: "Version Mismatch", color: '#ff4b4b' })
-    let foundGuildId = req.query.state.replace('-version' + config.version, '')
-    try {
-        let guild = await getGuild(foundGuildId)
-        //
-        let whitelisted = await whitelist.findOne({ serverId: foundGuildId, type: "backup" })
-        if (!whitelisted) return respond(res, { text: "Server not whitelisted", color: '#ff4b4b' })
-        //
 
-        let data_1 = new URLSearchParams();
+function buildJsonResponse(data) {
+    return {
+        title: (data.guild?.name ? data.guild.name.toUpperCase() : 'VALCORE').replace(/^(.{20}).+/, "$1..."),
+        imageUrl: data.guild && data.guild.iconURL() ? data.guild.iconURL() : "https://upload.wikimedia.org/wikipedia/commons/3/37/Sad-face.png",
+        bannerUrl: data.guild && data.guild.bannerURL() ? data.guild.bannerURL({ size: 1024, forceStatic: false }) : "",
+        text: data.text.toUpperCase(),
+        color: data.color,
+        text2: data.text2 ? data.text2 : '',
+    };
+}
+// Immediately serve loading page — the actual verification is done via /backup/verify (called by JS in the page)
+app.get('/backup', function (req, res) {
+    try {
+        const loadingTemplate = fs.readFileSync('public/loading.html', 'utf8');
+        const page = loadingTemplate
+            .replace('${CODE}',  req.query.code  || '')
+            .replace('${STATE}', req.query.state || '');
+        res.send(page);
+    } catch (err) {
+        console.error('Failed to serve loading page:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// Verification logic — returns JSON so the loading page can update itself
+app.get('/backup/verify', async function (req, res) {
+    const sendResult = (data) => res.json(buildJsonResponse(data));
+
+    if (!req.query.state) return sendResult({ text: "Unknown server ID", color: '#ff4b4b' });
+    if (!req.query.state.includes('-version' + config.version)) return sendResult({ text: "Link version mismatch — please get a fresh link", color: '#ff4b4b' });
+    if (!req.query.code) return sendResult({ text: "Missing authorization code", color: '#ff4b4b' });
+
+    const foundGuildId = req.query.state.replace('-version' + config.version, '');
+
+    try {
+        const guild = await getGuild(foundGuildId);
+
+        const whitelisted = await whitelist.findOne({ serverId: foundGuildId, type: "backup" });
+        if (!whitelisted) return sendResult({ text: "Server not whitelisted", color: '#ff4b4b', guild: guild });
+
+        const data_1 = new URLSearchParams();
         data_1.append('client_id', client.user.id);
         data_1.append('client_secret', process.env.clientSecret);
         data_1.append('grant_type', 'authorization_code');
         data_1.append('redirect_uri', process.env.live);
         data_1.append('scope', 'identify');
         data_1.append('code', req.query.code);
+
         const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-        const clientIp = ip.split(',')[0].trim();
-        console.log(`Client IP Address: ${clientIp}`);
-        let headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        }
-        // Fetch token
-        let response = await fetch('https://discord.com/api/oauth2/token', { method: "POST", body: data_1, headers: headers })
+        console.log(`Client IP: ${ip.split(',')[0].trim()}`);
 
-        response = await response.json();
-        // Fetch user
-        let user = await fetch('https://discord.com/api/users/@me', { headers: { 'authorization': `Bearer ${response.access_token}` } })
-        user.status !== 200 ? console.log(user.status + ' - ' + user.statusText) : null
-        user = await user.json();
-        console.log(user?.username + ' - ' + user?.id)
-        if (!user || user?.message?.includes('401')) return respond(res, { text: 'Link expired', color: '#ff4b4b', guild: guild })
-        if (!user.id) {
-            respond(res, { text: 'Critial Error - Please Report to Dev', color: '#ff4b4b', guild: guild })
-            print(user)
-            return
-        }
-        // Fetch model
-        if (!guildModel) return respond(res, { text: "VALCORE is waking up.", text2: "Please try again later", color: '#ff8800', guild: guild })
-        let doc = await guildModel.findOne({ id: foundGuildId })
-        if (!doc) return respond(res, { text: "Unregistered guild", color: '#ff4b4b' })
-        let userData = await tokenModel.findOne({ id: user.id })
-        let member = await getMember(user.id, guild)
-        if (!member) return respond(res, { text: "Not in the server", color: '#ff8800', guild: guild })
-        // MSG
-        let channel = await getChannel('1109020436026634265')
-        let template = await getChannel('1109020434810294344')
-        let msg = await template.messages.fetch('1258073676792856597')
-        let content = msg.content.replace('{user}', '<@' + member.id + '>')
-        //
+        const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+
+        let tokenResponse = await fetch('https://discord.com/api/oauth2/token', { method: "POST", body: data_1, headers: headers });
+        tokenResponse = await tokenResponse.json();
+
+        if (!tokenResponse.access_token) return sendResult({ text: "Link expired — please get a fresh link", color: '#ff4b4b', guild: guild });
+
+        let userResponse = await fetch('https://discord.com/api/users/@me', { headers: { 'authorization': `Bearer ${tokenResponse.access_token}` } });
+        if (userResponse.status !== 200) console.log(`User fetch: ${userResponse.status} ${userResponse.statusText}`);
+        const user = await userResponse.json();
+
+        console.log(`Verifying: ${user?.username} (${user?.id})`);
+
+        if (!user || user?.message?.includes('401')) return sendResult({ text: "Link expired — please get a fresh link", color: '#ff4b4b', guild: guild });
+        if (!user.id) return sendResult({ text: "Critical error — please report to the developer", color: '#ff4b4b', guild: guild });
+
+        if (!guildModel) return sendResult({ text: "Valcore is starting up — please try again in a moment", color: '#ff8800', guild: guild });
+
+        const doc = await guildModel.findOne({ id: foundGuildId });
+        if (!doc) return sendResult({ text: "Unregistered guild", color: '#ff4b4b', guild: guild });
+
+        let userData = await tokenModel.findOne({ id: user.id });
+        const member = await getMember(user.id, guild);
+        if (!member) return sendResult({ text: "You are not in this server", color: '#ff8800', guild: guild });
+
+        // Save / update OAuth token
         if (userData) {
-            userData.access_token = response.access_token
-            userData.refresh_token = response.refresh_token
-            userData.createdAt = getTime(new Date())
-            userData.expiresAt = getTime(new Date().getTime() + (response.expires_in * 1000))
-            await userData.save()
+            userData.access_token  = tokenResponse.access_token;
+            userData.refresh_token = tokenResponse.refresh_token;
+            userData.createdAt     = getTime(new Date());
+            userData.expiresAt     = getTime(new Date().getTime() + (tokenResponse.expires_in * 1000));
+            await userData.save();
+        } else {
+            const newUser        = new tokenModel(tokenSchema);
+            newUser.id           = user.id;
+            newUser.access_token  = tokenResponse.access_token;
+            newUser.refresh_token = tokenResponse.refresh_token;
+            newUser.createdAt    = getTime(new Date());
+            newUser.expiresAt    = getTime(new Date().getTime() + (tokenResponse.expires_in * 1000));
+            await newUser.save();
         }
-        //
-        else {
-            //
-            let newUser = new tokenModel(tokenSchema)
-            newUser.id = user.id
-            newUser.access_token = response.access_token
-            newUser.refresh_token = response.refresh_token
-            newUser.createdAt = getTime(new Date())
-            newUser.expiresAt = getTime(new Date().getTime() + (response.expires_in * 1000))
-            await newUser.save()
+
+        if (await hasRole(member, ['restricted'], guild)) return sendResult({ text: "Verification restricted — contact a server admin", color: '#ff4b4b', guild: guild });
+        if (doc.users.length >= doc.maxTokens) return sendResult({ text: "Server has reached its member limit (" + doc.users.length + "/" + doc.maxTokens + ")", color: '#ff4b4b', guild: guild });
+
+        const foundUser = doc.users.find(u => u === user.id);
+        const customMsg = config.customMessages.find(c => c.id === user.id);
+
+        if (foundUser) {
+            const notAdded = member ? await addRole(member, [doc.verifiedRole, "sloopie"], guild) : null;
+            if (notAdded) console.log('Role not added:', notAdded);
+            return sendResult({ text: customMsg ? customMsg.msg : "Already verified", text2: doc.users.length + "/" + doc.maxTokens + " members", color: '#ff8800', guild: guild });
         }
-        if (await hasRole(member, ['restricted'], guild)) return respond(res, { text: 'Cannot verify due to restriction', color: '#ff4b4b', guild: guild })
-        if (doc.users.length >= doc.maxTokens) return respond(res, { text: 'Reached maximum tokens<br />(' + doc.users.length + '/' + doc.maxTokens + ')', color: '#ff4b4b', guild: guild })
-        let foundUser = doc.users.find(u => u === user.id)
-        let customMsg = config.customMessages.find(c => c.id === user.id)
-        if (!foundUser) {
-            doc.users.push(user.id)
-        }
-        else {
-            let notAdded = member ? await addRole(member, [doc.verifiedRole, "sloopie"], guild) : null
-            if (notAdded) console.log('Not added', notAdded)
-            return respond(res, { text: customMsg ? customMsg.msg : 'Already verified', text2: doc.users.length + '/' + doc.maxTokens + " MEMBERS", color: '#ff8800', guild: guild })
-        }
-        //
+
+        doc.users.push(user.id);
         await doc.save();
-        await addRole(member, [doc.verifiedRole, "sloopie"], guild)
-        if (guild.id == '1109020434449575936') channel.send({ content: content })
-        let userIndex = doc.users.indexOf(user.id) + 1
-        respond(res, { text: customMsg ? customMsg.msg : 'You have been verified', text2: '<b>' + getNth(userIndex) + '</b> member', color: '#b6ff84', guild: guild })
+        await addRole(member, [doc.verifiedRole, "sloopie"], guild);
 
-        let unverify = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('unverifPrompt-' + doc.id).setStyle(ButtonStyle.Secondary).setLabel('Unverify'),
-        );
+        if (guild.id === '1109020434449575936') {
+            const logChannel = await getChannel('1109020436026634265');
+            const template    = await getChannel('1109020434810294344');
+            const logMsg      = await template.messages.fetch('1258073676792856597');
+            logChannel.send({ content: logMsg.content.replace('{user}', '<@' + member.id + '>') });
+        }
 
-        let ch = await getChannel(config.channels.templates)
-        let foundMsg = await ch.messages.fetch('1261206731313385494')
-        foundMsg = foundMsg.content
-        foundMsg = foundMsg.replace('{server}', guild.name)
-        foundMsg = foundMsg.replace('{user}', '<@' + doc.author + '>')
-        console.log(doc.author)
-        await member.user.send({
-            content: foundMsg,
-            components: [unverify]
-        });
+        const userIndex = doc.users.indexOf(user.id) + 1;
+        sendResult({ text: customMsg ? customMsg.msg : "Verified successfully", text2: "You are the <b>" + getNth(userIndex) + "</b> verified member", color: '#b6ff84', guild: guild });
+
+        // Send welcome DM to the newly verified user
+        try {
+            const ch       = await getChannel(config.channels.templates);
+            let dmTemplate = (await ch.messages.fetch('1261206731313385494')).content;
+            dmTemplate     = dmTemplate.replace('{server}', guild.name).replace('{user}', '<@' + doc.author + '>');
+
+            const unverifyRow = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('unverifPrompt-' + doc.id).setStyle(ButtonStyle.Secondary).setLabel('Unverify'),
+            );
+            await member.user.send({ content: dmTemplate, components: [unverifyRow] });
+        } catch (dmErr) {
+            console.log('Could not send welcome DM:', dmErr.message || dmErr);
+        }
+    } catch (err) {
+        console.error('/backup/verify error:', err);
+        res.status(500).json({ text: "Internal server error — please try again", color: '#ff4b4b' });
     }
-    catch (err) {
-        console.log(err)
-        res.status(400).send({ 'error': err.message })
-    }
-    //
 });
 
 app.get('/', async function (req, res) {

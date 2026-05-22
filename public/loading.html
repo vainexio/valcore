@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Valcore — Verifying</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Inter", sans-serif;
+      background-color: #0d0d12;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    #particles-js {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 36px 40px;
+      max-width: 440px;
+      width: 90%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      transition: all 0.4s ease;
+    }
+
+    /* ---- SPINNER ---- */
+    .spinner-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+    }
+    .spinner {
+      width: 52px;
+      height: 52px;
+      border: 3px solid rgba(255,255,255,0.08);
+      border-top-color: rgba(255,255,255,0.7);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- RESULT STATE ---- */
+    .server-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.2);
+      display: none;
+    }
+
+    .server-name {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      display: none;
+    }
+
+    .status-badge {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(0,0,0,0.35);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .status-message {
+      font-size: 22px;
+      font-weight: 700;
+      text-align: center;
+      color: #fff;
+      line-height: 1.3;
+    }
+
+    .status-sub {
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.45);
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+      display: none;
+    }
+
+    .loading-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.06em;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 18px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 0.08em;
+      z-index: 1;
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 28px 24px; }
+      .status-message { font-size: 18px; }
+    }
+  </style>
+  <body>
+    <div id="particles-js"></div>
+
+    <div class="card" id="card">
+      <div class="spinner-wrap" id="spinnerWrap">
+        <div class="spinner"></div>
+      </div>
+      <div class="loading-label" id="loadingLabel">Verifying your account...</div>
+
+      <img class="server-icon" id="serverIcon" src="" alt="Server Icon" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/3/37/Sad-face.png'" />
+      <span class="server-name" id="serverName"></span>
+      <div class="divider" id="divider"></div>
+      <div class="status-badge" id="statusBadge">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="badgeText"></span>
+      </div>
+      <div class="status-message" id="statusMessage" style="display:none"></div>
+      <div class="status-sub" id="statusSub" style="display:none"></div>
+    </div>
+
+    <div class="footer">© VALCORE &nbsp;·&nbsp; dev: vainexio</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script>
+      particlesJS("particles-js", {
+        particles: {
+          number: { value: 50, density: { enable: true, value_area: 900 } },
+          color: { value: "#ffffff" },
+          shape: { type: "circle" },
+          opacity: { value: 0.4, random: true, anim: { enable: true, speed: 0.8, opacity_min: 0.05, sync: false } },
+          size: { value: 3, random: true },
+          line_linked: { enable: true, distance: 130, color: "#ffffff", opacity: 0.15, width: 1 },
+          move: { enable: true, speed: 0.8, direction: "none", random: true, straight: false, out_mode: "out", bounce: false }
+        },
+        interactivity: {
+          events: { onhover: { enable: true, mode: "repulse" } },
+          modes: { repulse: { distance: 80, duration: 0.4 } }
+        },
+        retina_detect: true
+      });
+
+      const CODE  = encodeURIComponent("${CODE}");
+      const STATE = encodeURIComponent("${STATE}");
+
+      function showResult(data) {
+        document.getElementById("spinnerWrap").style.display  = "none";
+        document.getElementById("loadingLabel").style.display = "none";
+
+        const icon = document.getElementById("serverIcon");
+        if (data.imageUrl) { icon.src = data.imageUrl; icon.style.display = "block"; }
+
+        if (data.title) {
+          const name = document.getElementById("serverName");
+          name.textContent = data.title;
+          name.style.display = "block";
+        }
+
+        document.getElementById("divider").style.display = "block";
+
+        const badge    = document.getElementById("statusBadge");
+        const dot      = document.getElementById("statusDot");
+        const badgeTxt = document.getElementById("badgeText");
+        badge.style.display  = "inline-flex";
+        badge.style.border   = "1.5px solid " + data.color;
+        badge.style.color    = data.color;
+        dot.style.background = data.color;
+        badgeTxt.textContent = data.text || "";
+
+        const msg = document.getElementById("statusMessage");
+        msg.textContent   = data.text || "";
+        msg.style.display = "block";
+
+        if (data.text2) {
+          const sub = document.getElementById("statusSub");
+          sub.innerHTML     = data.text2;
+          sub.style.display = "block";
+        }
+
+        if (data.bannerUrl) {
+          document.body.style.backgroundImage = "url('" + data.bannerUrl + "')";
+          document.body.style.backgroundSize  = "cover";
+          document.body.style.backgroundBlendMode = "multiply";
+          document.body.style.backgroundColor = "rgba(0,0,0,0.88)";
+        }
+      }
+
+      function showError(msg) {
+        showResult({ text: msg || "Something went wrong", color: "#ff4b4b", title: "ERROR" });
+      }
+
+      fetch("/backup/verify?code=" + CODE + "&state=" + STATE)
+        .then(function(r) {
+          if (!r.ok) throw new Error("Server error " + r.status);
+          return r.json();
+        })
+        .then(showResult)
+        .catch(function(err) {
+          showError("Verification failed. Please try again.");
+          console.error(err);
+        });
+    </script>
+  </body>
+</html>

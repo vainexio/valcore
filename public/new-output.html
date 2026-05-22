@@ -4,207 +4,169 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Valcore</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@300;400;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
   </head>
   <style>
-    * {
-      color: white;
-      margin: 0px;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: "Roboto Slab", serif;
-      background-color: #191921;
-      background: url("${bannerUrl}") rgba(0, 0, 0, 0.85);
+      font-family: "Inter", sans-serif;
+      background-color: #0d0d12;
+      background: url("${bannerUrl}") rgba(0, 0, 0, 0.88);
       background-size: cover;
       background-repeat: no-repeat;
       background-blend-mode: multiply;
       background-position: center;
-      margin: 0;
-      padding: 0;
+      min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      color: #fff;
+      overflow: hidden;
     }
 
     #particles-js {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      position: fixed;
+      inset: 0;
       z-index: 0;
+      pointer-events: none;
     }
-    .container {
-      height: 100vh;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .details-card {
-      width: 90%;
-      max-width: 500px;
-      height: 30%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
 
-      border-radius: 32px;
-      border: 2px solid white;
-    }
-    .server-details {
-      width: 100%;
-      display: flex;
-      height: 100%;
-      align-items: center;
-      justify-content: center;
-    }
-    .details-holder {
+    .card {
+      position: relative;
+      z-index: 1;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 36px 40px;
+      max-width: 440px;
+      width: 90%;
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
     }
-    h1 {
-      font-size: 2rem;
-    }
+
     .server-icon {
-      height: 110px;
-      margin-left: 7px;
-      border-radius: 12px;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.2);
+      flex-shrink: 0;
     }
-    .footer-icon {
-      height: 20px;
-      margin-right: 10px;
+
+    .server-name {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(0,0,0,0.35);
+      border: 1.5px solid ${subtextColor};
+      color: ${subtextColor};
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: ${subtextColor};
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .status-message {
+      font-size: 22px;
+      font-weight: 700;
+      text-align: center;
+      color: #fff;
+      line-height: 1.3;
+    }
+
+    .status-sub {
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.45);
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: rgba(255,255,255,0.08);
     }
 
     .footer {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      margin-bottom: 15px;
+      position: fixed;
+      bottom: 18px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 0.08em;
       z-index: 1;
     }
-    @media (max-width: 768px) {
-      body {
-        height: 100vh;
-      }
-      h1 {
-        font-size: 20px;
-      }
-      h3 {
-        font-size: 13px;
-      }
-      .container {
-        height: 85vh;
-      }
-      .footer {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        margin-bottom: 15px;
-        z-index: 1;
-      }
-      .server-icon {
-        height: 100px;
-      }
+
+    @media (max-width: 480px) {
+      .card { padding: 28px 24px; }
+      .status-message { font-size: 18px; }
     }
   </style>
   <body>
-    <section class="container">
-      <div class="server-details">
-        <div class="details-card">
-          <div class="details-holder">
-            <h1 style="color: ${titleColor}">${pageTitle}</h1>
-            <h3 style="color: ${subtextColor}">${subtext}</h3>
-            <p style="color: ${subtext2Color}">${subtext2}</p>
-          </div>
-          <img class="server-icon" src="${imageUrl}" />
-        </div>
-      </div>
-    </section>
     <div id="particles-js"></div>
+
+    <div class="card">
+      <img class="server-icon" src="${imageUrl}" alt="Server Icon" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/3/37/Sad-face.png'" />
+      <span class="server-name">${pageTitle}</span>
+      <div class="divider"></div>
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        ${subtext}
+      </div>
+      <div class="status-message">${subtext}</div>
+      <div class="status-sub">${subtext2}</div>
+    </div>
+
+    <div class="footer">© VALCORE &nbsp;·&nbsp; dev: vainexio</div>
+
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         particlesJS("particles-js", {
           particles: {
-            number: {
-              value: 70,
-              density: {
-                enable: true,
-                value_area: 900,
-              },
-            },
-            color: {
-              value: "#ffffff",
-            },
-            shape: {
-              type: "circle",
-            },
-            opacity: {
-              value: 0.7,
-              random: false,
-              anim: {
-                enable: true,
-                speed: 1,
-                opacity_min: 0.1,
-                sync: false,
-              },
-            },
-            size: {
-              value: 4,
-              random: false,
-              anim: {
-                enable: true,
-                speed: 3,
-                size_min: 0.1,
-                sync: false,
-              },
-            },
-            line_linked: {
-              enable: true,
-              distance: 150,
-              color: "#ffffff",
-              opacity: 0.5,
-              width: 1,
-            },
-            move: {
-              enable: true,
-              speed: 1,
-              direction: "none",
-              random: true,
-              straight: false,
-              out_mode: "out",
-              bounce: false,
-            },
+            number: { value: 50, density: { enable: true, value_area: 900 } },
+            color: { value: "#ffffff" },
+            shape: { type: "circle" },
+            opacity: { value: 0.4, random: true, anim: { enable: true, speed: 0.8, opacity_min: 0.05, sync: false } },
+            size: { value: 3, random: true },
+            line_linked: { enable: true, distance: 130, color: "#ffffff", opacity: 0.15, width: 1 },
+            move: { enable: true, speed: 0.8, direction: "none", random: true, straight: false, out_mode: "out", bounce: false }
           },
           interactivity: {
-            events: {
-              onhover: {
-                enable: true,
-                mode: "repulse",
-              },
-            },
-            modes: {
-              repulse: {
-                distance: 100,
-                duration: 0.4,
-              },
-              push: {
-                particles_nb: 1,
-              },
-            },
+            events: { onhover: { enable: true, mode: "repulse" } },
+            modes: { repulse: { distance: 80, duration: 0.4 } }
           },
-          retina_detect: true,
+          retina_detect: true
         });
       });
     </script>

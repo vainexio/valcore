@@ -17,6 +17,12 @@ module.exports = {
   deleteSlashes: ['1040771266929496138','1234990429397717105','1392825039505592371','1169591423566368840','1170281459177771099','1234990408933707796'],
   slashes: [
     {
+      "name": "help",
+      "type": 1,
+      "description": "BACKUP - Learn how to set up and use Valcore Backup",
+      "options": [],
+    },
+    {
       "name": "restore_members",
       "type": 1,
       "description": "BACKUP - Instructions to restore your members on your new server",
@@ -25,15 +31,21 @@ module.exports = {
     {
       "name": "status",
       "type": 1,
-      "description": "BACKUP - Get server status",
+      "description": "BACKUP - Get your server's backup status",
       "options": [
         {
           "name": 'key',
-          "description": 'Access key',
+          "description": 'Your access key (optional if you are the registered author)',
           "type": 3,
-          "required": true,
+          "required": false,
         },
       ]
+    },
+    {
+      "name": "getkey",
+      "type": 1,
+      "description": "BACKUP - Retrieve your server's access key via DM",
+      "options": [],
     },
     {
       "name": "joinall",
@@ -100,7 +112,7 @@ module.exports = {
     {
       "name": "transfer",
       "type": 1,
-      "description": "BACKUP - Transfer your data",
+      "description": "BACKUP - Transfer your data to a new server",
       "options": [
         {
           "name": 'new_server_id',
@@ -119,13 +131,13 @@ module.exports = {
     {
       "name": "verify_link",
       "type": 1,
-      "description": "BACKUP - Get verification link of a guild",
+      "description": "BACKUP - Get the verification link for your guild",
       "options": [],
     },
     {
       "name": "data",
       "type": 1,
-      "description": "BACKUP - Get server data",
+      "description": "BACKUP - Get server data (admin only)",
       "options": [
         {
           "name": 'id',
@@ -138,7 +150,7 @@ module.exports = {
     {
       "name": "setlimit",
       "type": 1,
-      "description": "BACKUP - Update max tokens limit",
+      "description": "BACKUP - Update max tokens limit (admin only)",
       "options": [
         {
           "name": 'id',
@@ -175,6 +187,44 @@ module.exports = {
         {
           "name": 'key',
           "description": 'Access Key',
+          "type": 3,
+          "required": true,
+        },
+      ],
+    },
+    {
+      "name": "setrole",
+      "type": 1,
+      "description": "BACKUP - Set the verified role for your server",
+      "options": [
+        {
+          "name": 'role',
+          "description": 'The role to assign to verified users',
+          "type": 8,
+          "required": true,
+        },
+        {
+          "name": 'key',
+          "description": 'Access key',
+          "type": 3,
+          "required": true,
+        },
+      ],
+    },
+    {
+      "name": "unverify_on_leave",
+      "type": 1,
+      "description": "BACKUP - Toggle whether users are unverified when they leave the server",
+      "options": [
+        {
+          "name": 'enabled',
+          "description": 'Enable or disable unverify on leave',
+          "type": 5,
+          "required": true,
+        },
+        {
+          "name": 'key',
+          "description": 'Access key',
           "type": 3,
           "required": true,
         },
