@@ -1,6 +1,6 @@
 //const others = require('../functions/others.js')
 const Discord = require('discord.js');
-const {Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu} = Discord;
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = Discord;
 let colors = {
   red: "#ff5e5e",
   blue: "#6b8eff",

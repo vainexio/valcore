@@ -11,12 +11,18 @@ const moment = require('moment')
 // Discord
 const Discord = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
-const { WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu } = Discord;
-const myIntents = new Intents();
-//myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_MESSAGES);
-myIntents.add(Intents.FLAGS.GUILDS, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS);
+const { WebhookClient, Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder, PermissionFlagsBits, ChannelType, ActivityType, ButtonStyle } = Discord;
 
-const client = new Client({ intents: myIntents, partials: ["CHANNEL"] });
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.MessageContent,
+    ],
+    partials: [Partials.Channel],
+});
 
 // Env
 const token = process.env.SECRET;
@@ -123,7 +129,7 @@ client.on("ready", async () => {
             console.log(deleteRes.status)
         }
     }
-    client.user.setPresence({ status: 'online', activities: [{ name: 'Users', type: "LISTENING" }] });
+    client.user.setPresence({ status: 'online', activities: [{ name: 'Users', type: ActivityType.Listening }] });
     //await giveWhitelist()
     if (!process.env.CC || cc !== process.env.CC) process.exit(1);
 })
@@ -217,7 +223,7 @@ async function guildPerms(member, perms) {
     }
 }
 function noPerms(message) {
-    let Embed = new MessageEmbed()
+    let Embed = new EmbedBuilder()
         .setColor(colors.red)
         .setDescription("You lack special permissions to use this command.")
     return Embed;
@@ -306,15 +312,15 @@ async function refreshOneToken(user) {
 
 client.on("messageCreate", async (message) => {
     if (message.content.toLowerCase() === ';inv') {
-        let row = new MessageActionRow().addComponents(
-            new MessageButton().setURL('https://discord.com/api/oauth2/authorize?client_id=' + client.user.id + '&permissions=8&scope=bot').setStyle('LINK').setLabel("Invite Bot"),
+        let row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setURL('https://discord.com/api/oauth2/authorize?client_id=' + client.user.id + '&permissions=8&scope=bot').setStyle(ButtonStyle.Link).setLabel("Invite Bot"),
         );
 
         message.reply({ components: [row] })
     }
-    if (message.channel.type === 'DM' || message.author.bot) return;
+    if (message.channel.type === ChannelType.DM || message.author.bot) return;
     //
-    if (!await guildPerms(message.member, ["MANAGE_GUILD"]) && !/^\W/.test(message.content) && !message.content.toLowerCase().startsWith('owo')) {
+    if (!await guildPerms(message.member, [PermissionFlagsBits.ManageGuild]) && !/^\W/.test(message.content) && !message.content.toLowerCase().startsWith('owo')) {
         const userId = message.author.id;
         const userMessage = message.content;
 
@@ -411,7 +417,7 @@ client.on("messageCreate", async (message) => {
                 else safe++
             }
 
-            let embed = new MessageEmbed()
+            let embed = new EmbedBuilder()
                 .addFields(
                     { name: server ? server.name : 'Unknown', value: 'Changes\n' + guild.users.length + ' >> ' + (guild.users.length - toDelete.length) }
                 )
@@ -421,7 +427,7 @@ client.on("messageCreate", async (message) => {
                 let index = toDelete[i]
                 guild.users.splice(index, 1)
             }
-            embed = new MessageEmbed(embed)
+            embed
                 .addFields(
                     { name: 'Total Registered Users', value: guild.users.length.toString() },
                     { name: 'Error', value: error.toString() }
@@ -506,12 +512,12 @@ client.on('interactionCreate', async inter => {
         // Setup
         if (cname === 'register') {
             if (!await getPerms(inter.member, 2)) return inter.reply({ content: emojis.warning + " You are not on the whitelist" });
-            let options = inter.options._hoistedOptions
+            let options = inter.options.data
             //
             let guildId = options.find(a => a.name === 'guild_id')
             let guild = await getGuild(guildId.value)
             if (!guild) return inter.reply({ content: emojis.warning + ' Cannot find guild. Make sure that the bot is on the server that you wish to register' })
-            if (!await guildPerms(await getMember(inter.user.id, guild), ["MANAGE_GUILD"])) return inter.reply({ content: emojis.warning + ' You must have the **MANAGE SERVER** permission in the server that you want to register' });
+            if (!await guildPerms(await getMember(inter.user.id, guild), [PermissionFlagsBits.ManageGuild])) return inter.reply({ content: emojis.warning + ' You must have the **MANAGE SERVER** permission in the server that you want to register' });
 
             let doc = await guildModel.findOne({ id: guild.id })
             if (doc) return inter.reply({ content: emojis.warning + ' This guild was already registered.' })
@@ -528,7 +534,7 @@ client.on('interactionCreate', async inter => {
 
             await inter.reply({ content: emojis.on + " Your guild was registered!" })
 
-            let embed = new MessageEmbed()
+            let embed = new EmbedBuilder()
                 .addFields(
                     { name: "Generated Key", value: "This key was generated for the first time. Make sure you save it externally!" },
                     { name: "Data", value: "Guild ID `" + guild.id + "`\nGuild Name `" + guild.name + "`" }
@@ -543,7 +549,7 @@ client.on('interactionCreate', async inter => {
                 })
         }
         else if (cname === 'unregister') {
-            let options = inter.options._hoistedOptions
+            let options = inter.options.data
             //
             let key = options.find(a => a.name === 'key')
             await inter.deferReply();
@@ -551,7 +557,7 @@ client.on('interactionCreate', async inter => {
             let doc = await guildModel.findOne({ key: key.value })
             let guild = await getGuild(doc.id)
             if (doc) {
-                let embed = new MessageEmbed()
+                let embed = new EmbedBuilder()
                     .setDescription(emojis.off + ' Your guild is flagged for termination')
                     .setColor(colors.red)
                     .addFields(
@@ -561,8 +567,8 @@ client.on('interactionCreate', async inter => {
                         { name: "Access Key", value: '```diff\n- ' + doc.key.substr(0, doc.key.length - 20) + '```' },
                     )
 
-                let row = new MessageActionRow().addComponents(
-                    new MessageButton().setCustomId('unregisPrompt-' + inter.user.id).setStyle('DANGER').setLabel("Unregister").setEmoji(emojis.warning),
+                let row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder().setCustomId('unregisPrompt-' + inter.user.id).setStyle(ButtonStyle.Danger).setLabel("Unregister").setEmoji(emojis.warning),
                 );
                 await inter.editReply({ content: doc.id, embeds: [embed], components: [row], ephemeral: true })
             } else {
@@ -572,7 +578,7 @@ client.on('interactionCreate', async inter => {
 
         // Config
         else if (cname === 'unverify_on_leave') {
-            let options = inter.options._hoistedOptions
+            let options = inter.options.data
             //
             let key = options.find(a => a.name === 'key')
             let enabled = options.find(a => a.name === 'enabled')
@@ -592,7 +598,7 @@ client.on('interactionCreate', async inter => {
             }
         }
         else if (cname === 'status') {
-            let options = inter.options._hoistedOptions
+            let options = inter.options.data
             //
             let key = options.find(a => a.name === 'key')
             await inter.deferReply({ ephemeral: true })
@@ -602,7 +608,7 @@ client.on('interactionCreate', async inter => {
             if (!doc) return inter.reply({ content: emojis.warning + ' Invalid access key' })
             let guild = await getGuild(doc.id)
 
-            let embed = new MessageEmbed()
+            let embed = new EmbedBuilder()
                 .setColor(colors.none)
                 .setTitle(`${guild?.name}`)
                 .setThumbnail(guild?.iconURL())
@@ -623,7 +629,7 @@ client.on('interactionCreate', async inter => {
             await inter.editReply({ embeds: [embed], ephemeral: true })
         }
         else if (cname === 'setrole') {
-            let options = inter.options._hoistedOptions
+            let options = inter.options.data
             let role = options.find(a => a.name === 'role')
             let key = options.find(a => a.name === 'key')
             let doc = await guildModel.findOne({ key: key.value })
@@ -634,7 +640,7 @@ client.on('interactionCreate', async inter => {
             doc.verifiedRole = role.role.id
             await doc.save()
 
-            let embed = new MessageEmbed()
+            let embed = new EmbedBuilder()
                 .setDescription(emojis.on + " Successfully changed verified role from " + (oldLimit !== "Backup" ? "<@&" + oldLimit + ">" : oldLimit) + " to **" + role.role.toString() + "**")
                 .setColor(theme)
 
@@ -648,7 +654,7 @@ client.on('interactionCreate', async inter => {
             await inter.reply(foundMsg.content)
         }
         else if (cname === 'transfer') {
-            let options = inter.options._hoistedOptions
+            let options = inter.options.data
             //
             let newServer = options.find(a => a.name === 'new_server_id')
             let key = options.find(a => a.name === 'key')
@@ -663,7 +669,7 @@ client.on('interactionCreate', async inter => {
             if (!doc || !guild) return inter.channel.send({ content: emojis.warning + ' Invalid guild/key' })
             let existingGuild = await guildModel.findOne({ id: guild.id })
             if (existingGuild && existingGuild.id !== doc.id) return inter.channel.send({ content: emojis.warning + ' Cannot transfer to an already registered guild.' })
-            let embed = new MessageEmbed()
+            let embed = new EmbedBuilder()
                 .addFields(
                     { name: 'Guild Transfer', value: emojis.off + ' OLD\nID `' + doc.id + '`\n\n' + emojis.on + ' NEW\nID `' + newServer.value + '`\nName **' + guild.name + '**' },
                     { name: 'Author Transfer', value: emojis.off + ' OLD\nID `' + doc.author + '`\n\n' + emojis.on + ' NEW\nID `' + inter.user.id + '`\nPing ' + inter.user.toString() },
@@ -681,7 +687,7 @@ client.on('interactionCreate', async inter => {
 
             await inter.channel.send({ content: emojis.check + ' Data Transferred', embeds: [embed] })
 
-            let embed2 = new MessageEmbed()
+            let embed2 = new EmbedBuilder()
                 .addFields(
                     { name: "Generated Key", value: "Your old key was deleted and a new key was generated. Make sure you save it externally!" },
                     { name: "Data", value: "Guild ID `" + guild.id + "`\nGuild Name `" + guild.name + "`" }
@@ -700,7 +706,7 @@ client.on('interactionCreate', async inter => {
             let whitelisted = await whitelist.findOne({ serverId: inter.guild.id, type: "backup" })
             if (!whitelisted) return inter.reply(emojis.warning + " Server not whitelisted. Here's why:\n- Use this command on your main server or use /transer cmd if you no longer have access to it.")
             //
-            let options = inter.options._hoistedOptions;
+            let options = inter.options.data;
             let key = options.find(a => a.name === 'key');
             let reason = options.find(a => a.name === 'message');
             let guildId = options.find(a => a.name === 'target_server_id');
@@ -753,8 +759,8 @@ client.on('interactionCreate', async inter => {
                                     .then(suc => {
                                         success++;
 
-                                        let unverify = new MessageActionRow().addComponents(
-                                            new MessageButton().setCustomId('unverifPrompt-' + doc.id).setStyle('SECONDARY').setLabel('Unverify'),
+                                        let unverify = new ActionRowBuilder().addComponents(
+                                            new ButtonBuilder().setCustomId('unverifPrompt-' + doc.id).setStyle(ButtonStyle.Secondary).setLabel('Unverify'),
                                         );
 
                                         let finalMsg = msgContent.replace('{server}', guild.name).replace('{user}', '<@' + doc.author + '>').replace('{msg}', reason.value);
@@ -805,7 +811,7 @@ client.on('interactionCreate', async inter => {
             let whitelisted = await whitelist.findOne({ serverId: inter.guild.id, type: "backup" })
             if (!whitelisted) return inter.reply(emojis.warning + " Server not whitelisted. Here's why:\n- Use this command on your main server or use /transer cmd if you no longer have access to it.")
             //
-            let options = inter.options._hoistedOptions;
+            let options = inter.options.data;
             let key = options.find(a => a.name === 'key');
             let reason = options.find(a => a.name === 'message');
             let user = options.find(a => a.name === 'target_user');
@@ -849,8 +855,8 @@ client.on('interactionCreate', async inter => {
                     if (!error) {
                         inter.followUp({ content: emojis.on + " Successfully joined **" + user.tag + "** to " + guild.name });
 
-                        let unverify = new MessageActionRow().addComponents(
-                            new MessageButton().setCustomId('unverifPrompt-' + doc.id).setStyle('SECONDARY').setLabel('Unverify'),
+                        let unverify = new ActionRowBuilder().addComponents(
+                            new ButtonBuilder().setCustomId('unverifPrompt-' + doc.id).setStyle(ButtonStyle.Secondary).setLabel('Unverify'),
                         );
 
                         msgContent = msgContent.replace('{server}', guild.name);
@@ -875,7 +881,7 @@ client.on('interactionCreate', async inter => {
             let whitelisted = await whitelist.findOne({ serverId: inter.guild.id, type: "backup" })
             if (!whitelisted) return inter.reply(emojis.warning + " Server not whitelisted. Here's why:\n- Use this command on your main server or use /transer cmd if you no longer have access to it.")
             //
-            let options = inter.options._hoistedOptions
+            let options = inter.options.data
             //
             let key = options.find(a => a.name === 'key')
 
@@ -921,7 +927,7 @@ client.on('interactionCreate', async inter => {
             if (!doc) return inter.reply({ content: emojis.warning + ' Unergistered guild ID' })
             let guild = await getGuild(doc.id)
 
-            let embed = new MessageEmbed()
+            let embed = new EmbedBuilder()
                 .setColor(colors.none)
                 .setTitle(`${guild?.name}`)
                 .setThumbnail(guild?.iconURL())
@@ -939,15 +945,15 @@ client.on('interactionCreate', async inter => {
 
             let row = null
             let url = encodeURI('https://discord.com/oauth2/authorize?client_id=' + client.user.id + '&response_type=code&redirect_uri=' + process.env.live + '&scope=guilds.join+identify&state=' + doc.id + '-version' + config.version)
-            row = new MessageActionRow().addComponents(
-                new MessageButton().setURL(url).setStyle('LINK').setLabel("Verify"),
+            row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setURL(url).setStyle(ButtonStyle.Link).setLabel("Verify"),
             );
 
             await inter.reply({ embeds: [embed], components: [row] })
         }
         else if (cname === 'merge') {
             if (!await getPerms(inter.member, 5)) return inter.reply({ content: emojis.warning + " Insufficient Permission" });
-            let options = inter.options._hoistedOptions
+            let options = inter.options.data
             //
             let newServer = options.find(a => a.name === 'new_server_id')
             let key = options.find(a => a.name === 'key')
@@ -969,7 +975,7 @@ client.on('interactionCreate', async inter => {
         }
         else if (cname === 'data') {
             if (!await getPerms(inter.member, 5)) return inter.reply({ content: emojis.warning + " Insufficient Permission" });
-            let options = inter.options._hoistedOptions
+            let options = inter.options.data
             //
             let id = options.find(a => a.name === 'id')
             let doc = await guildModel.findOne({ id: id.value })
@@ -980,7 +986,7 @@ client.on('interactionCreate', async inter => {
         }
         else if (cname === 'setlimit') {
             if (!await getPerms(inter.member, 5)) return inter.reply({ content: emojis.warning + " Insufficient Permission" });
-            let options = inter.options._hoistedOptions
+            let options = inter.options.data
             //
             let id = options.find(a => a.name === 'id')
             let limit = options.find(a => a.name === 'limit')
@@ -996,21 +1002,21 @@ client.on('interactionCreate', async inter => {
         }
     }
     //BUTTONS
-    else if (inter.isButton() || inter.isSelectMenu()) {
+    else if (inter.isButton() || inter.isStringSelectMenu()) {
         let id = inter.customId
         if (id.startsWith("unverifPrompt-")) {
             let guildId = id.replace('unverifPrompt-', '')
-            let row = new MessageActionRow().addComponents(
-                new MessageButton().setCustomId('unverify-' + guildId).setStyle('SUCCESS').setLabel("Yes"),
-                new MessageButton().setCustomId('cancel').setStyle('DANGER').setLabel("No"),
+            let row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('unverify-' + guildId).setStyle(ButtonStyle.Success).setLabel("Yes"),
+                new ButtonBuilder().setCustomId('cancel').setStyle(ButtonStyle.Danger).setLabel("No"),
             );
             await inter.reply({ content: 'Are you sure you want to unverify yourself from this server?', ephemeral: true, components: [row] })
         }
         else if (id.startsWith("unregisPrompt-")) {
             let userId = id.replace('unregisPrompt-', '')
-            let row = new MessageActionRow().addComponents(
-                new MessageButton().setCustomId('unregister-' + inter.message.content).setStyle('SUCCESS').setLabel("Yes"),
-                new MessageButton().setCustomId('cancel').setStyle('DANGER').setLabel("No"),
+            let row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('unregister-' + inter.message.content).setStyle(ButtonStyle.Success).setLabel("Yes"),
+                new ButtonBuilder().setCustomId('cancel').setStyle(ButtonStyle.Danger).setLabel("No"),
             );
             await inter.reply({ content: 'Are you sure you want to unregister this server?\n> This action is irreversible!', ephemeral: true, components: [row] })
         }
@@ -1022,7 +1028,7 @@ client.on('interactionCreate', async inter => {
             let guild = await getGuild(doc.id)
             if (!doc) return inter.update({ content: emojis.warning + ' Unergistered guild ID', components: [] })
 
-            let embed = new MessageEmbed()
+            let embed = new EmbedBuilder()
                 .setDescription(emojis.off + ' This guild data was terminated by ' + inter.user.toString())
                 .setColor(colors.red)
                 .addFields(
@@ -1069,10 +1075,12 @@ process.on('unhandledRejection', async error => {
     console.log(error);
     let caller_line = error.stack.split("\n");
     let index = await caller_line.find(b => b.includes('/app'))
-    let embed = new MessageEmbed()
-        .addField('Caller Line', '```' + (index ? index : 'Unknown') + '```', true)
-        .addField('Error Code', '```css\n[ ' + error.code + ' ]```', true)
-        .addField('Error', '```diff\n- ' + (error.stack >= 1024 ? error.stack.slice(0, 1023) : error.stack) + '```')
+    let embed = new EmbedBuilder()
+        .addFields(
+            { name: 'Caller Line', value: '```' + (index ? index : 'Unknown') + '```', inline: true },
+            { name: 'Error Code', value: '```css\n[ ' + error.code + ' ]```', inline: true },
+            { name: 'Error', value: '```diff\n- ' + (error.stack >= 1024 ? error.stack.slice(0, 1023) : error.stack) + '```' }
+        )
         .setColor(colors.red)
 
     let channel = await getChannel(output)
@@ -1181,8 +1189,8 @@ app.get('/backup', async function (req, res) {
         let userIndex = doc.users.indexOf(user.id) + 1
         respond(res, { text: customMsg ? customMsg.msg : 'You have been verified', text2: '<b>' + getNth(userIndex) + '</b> member', color: '#b6ff84', guild: guild })
 
-        let unverify = new MessageActionRow().addComponents(
-            new MessageButton().setCustomId('unverifPrompt-' + doc.id).setStyle('SECONDARY').setLabel('Unverify'),
+        let unverify = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('unverifPrompt-' + doc.id).setStyle(ButtonStyle.Secondary).setLabel('Unverify'),
         );
 
         let ch = await getChannel(config.channels.templates)

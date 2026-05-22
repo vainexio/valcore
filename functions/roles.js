@@ -1,6 +1,6 @@
 const client = require('../server.js').client;
 const Discord = require('discord.js');
-const {Client, Intents, MessageEmbed, MessageActionRow, MessageButton} = Discord;
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = Discord;
 
 function hasRole (member, roles) {
   for (let i in roles) {

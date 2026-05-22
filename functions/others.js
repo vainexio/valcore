@@ -1,6 +1,6 @@
 const {getPerms, noPerms, client} = require('../server.js');
 const Discord = require('discord.js');
-const {Client, Intents, MessageEmbed, MessageActionRow, MessageButton} = Discord;
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = Discord;
 
 const sendMsg = require('../functions/sendMessage.js')
 const sendChannel = sendMsg.sendChannel
