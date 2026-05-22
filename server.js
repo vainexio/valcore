@@ -835,7 +835,7 @@ client.on('interactionCreate', async inter => {
             try {
                 await inter.deferReply({ ephemeral: true });
 
-                const doc = await guildModel.findOne({ author: inter.user.id });
+                const doc = await guildModel.findOne({ author: inter.user.id, id: inter.guild.id });
                 if (!doc) {
                     return inter.editReply({
                         content: emojis.warning + " No registered server found under your account. Use `/register` to register your server first.",
