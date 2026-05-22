@@ -318,61 +318,54 @@ client.on("messageCreate", async (message) => {
             messageCount.set(userId, 1);
         }
     }
-    if (isCommand('restore', message)) {
-    const ok = await withGuildLock(message.guild.id, async () => {
-        await message.reply(emojis.loading+" Restoring verified members...");
-        let members = await message.guild.members.fetch().then(async mems => {
-            let members = [];
-            mems.forEach(mem => members.push(mem));
-            
-            let success = 0;
-            let failed = 0;
-            let doc = await guildModel.findOne({ id: message.guild.id });
+        if (isCommand('restore', message)) {
+            const ok = await withGuildLock(message.guild.id, async () => {
+                await message.reply(emojis.loading + " Restoring verified members...");
 
-            if (!doc) {
-                console.log('No guild document found');
-                return;
-            }
+                const mems = await message.guild.members.fetch();
+                const members = [];
+                mems.forEach(mem => members.push(mem));
 
-            for (let i in members) {
-                let mem = members[i];
-                try {
-                    let found = doc.users.find(u => u === mem.user.id);
-                    let isVerified = await hasRole(mem, [doc.verifiedRole]);
+                let success = 0;
+                let failed = 0;
+                const doc = await guildModel.findOne({ id: message.guild.id });
 
-                    if (!found && !mem.user.bot && isVerified) {
-                        doc.users.push(mem.user.id);
-                        success++;
-                    } else {
-                        failed++;
-                    }
-                } catch (err) {
-                    failed++;
-                    console.log(err);
+                if (!doc) {
+                    console.log('No guild document found');
+                    return;
                 }
+
+                // Clear doc.users first
+                doc.users = [];
+
+                for (let i in members) {
+                    const mem = members[i];
+
+                    try {
+                        const userId = mem.user.id;
+                        const isVerified = await hasRole(mem, [doc.verifiedRole]);
+                        const tokenUser = await tokenModel.findOne({ id: userId });
+
+                        if (!mem.user.bot && isVerified && tokenUser) {
+                            doc.users.push(userId);
+                            success++;
+                        } else {
+                            failed++;
+                        }
+                    } catch (err) {
+                        failed++;
+                        console.log(err);
+                    }
+                }
+
+                await doc.save();
+                await message.reply('SUCCESS: ' + success + '\nOTHER: ' + failed);
+            });
+
+            if (!ok) {
+                return message.reply("Command is already running in this server.");
             }
-
-            let toDelete = [];
-            for (let i in doc.users) {
-                let user = doc.users[i];
-                if (user === null) toDelete.push(i);
-            }
-
-            toDelete.sort((a, b) => b - a);
-            for (let i in toDelete) {
-                let index = toDelete[i];
-                doc.users.splice(index, 1);
-            }
-
-            await doc.save();
-            message.reply('SUCCESS: ' + success+'\nOTHER: ' + failed);
-        });
-    });
-
-    if (!ok) {
-        return message.reply("Command is already running in this server.");
-    }
-}
+        }
     else if (isCommand('calibrate', message)) {
         if (!await getPerms(message.member, 4)) return message.reply({ content: emojis.warning + " You can't do that sir" });
         await message.delete();
