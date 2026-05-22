@@ -13,8 +13,8 @@ ATTACHMENT - 11
 */
 
 module.exports = {
-  register: false,
-  deleteSlashes: ['1040771266929496138','1234990429397717105','1392825039505592371','1169591423566368840','1170281459177771099','1234990408933707796'],
+  register: true,
+  deleteSlashes: [],
   slashes: [
     
     {
