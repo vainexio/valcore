@@ -835,33 +835,50 @@ client.on('interactionCreate', async inter => {
             try {
                 await inter.deferReply({ ephemeral: true });
 
-                const doc = await guildModel.findOne({ author: inter.user.id, id: inter.guild.id });
-                if (!doc) {
+                const docs = await guildModel.find({ author: inter.user.id });
+                if (!docs || docs.length === 0) {
                     return inter.editReply({
                         content: emojis.warning + " No registered server found under your account. Use `/register` to register your server first.",
                     });
                 }
 
-                const guild = await getGuild(doc.id);
                 const keyEmbed = new EmbedBuilder()
                     .setColor(theme)
-                    .setTitle(`${emojis.on} Your Access Key`)
-                    .setDescription("Your access key has been sent to your **DMs**.")
-                    .addFields(
-                        { name: "Server", value: guild ? guild.name + " (`" + guild.id + "`)" : "`" + doc.id + "`" },
-                        { name: "Verified Members", value: doc.users.length + " / " + doc.maxTokens },
-                    )
-                    .setFooter({ text: "Do not share your key with anyone." });
+                    .setTitle(`${emojis.on} Your Access Keys`)
+                    .setDescription("Your access keys have been sent to your **DMs**.")
+                    .setFooter({ text: "Do not share your keys with anyone." });
 
                 const dmEmbed = new EmbedBuilder()
                     .setColor(theme)
-                    .setTitle("Your Valcore Backup Key")
-                    .setDescription("You requested your access key. If you did not request this, please contact the Valcore admin.")
-                    .addFields(
-                        { name: "Server", value: guild ? guild.name + " (`" + guild.id + "`)" : "`" + doc.id + "`" },
-                        { name: "Access Key", value: "```\n" + doc.key + "\n```" },
-                    )
-                    .setFooter({ text: "Keep this private. Do not share it with anyone." });
+                    .setTitle("Your Valcore Backup Keys")
+                    .setDescription("You requested your access keys. If you did not request this, please contact the Valcore admin.")
+                    .setFooter({ text: "Keep these private. Do not share them with anyone." });
+
+                const fields = docs.map((doc, index) => {
+                    const guild = getGuild(doc.id); // keep async outside if getGuild returns promise
+                    return {
+                        name: `Server ${index + 1}`,
+                        value: [
+                            `**Server:** ${guild ? guild.name + " (`" + guild.id + "`)" : "`" + doc.id + "`"}`,
+                            `**Access Key:**`,
+                            "```",
+                            doc.key,
+                            "```",
+                        ].join("\n"),
+                    };
+                });
+
+                // If getGuild is async, resolve names first:
+                const enrichedFields = [];
+                for (const doc of docs) {
+                    const guild = await getGuild(doc.id);
+                    enrichedFields.push({
+                        name: guild ? `${guild.name}` : `Server \`${doc.id}\``,
+                        value: `**Access Key:**\n\`\`\`\n${doc.key}\n\`\`\``,
+                    });
+                }
+
+                dmEmbed.addFields(enrichedFields);
 
                 await inter.user.send({ embeds: [dmEmbed] })
                     .then(() => inter.editReply({ embeds: [keyEmbed] }))
