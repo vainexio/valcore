@@ -2,7 +2,7 @@ const fetch = require('node-fetch');
 
 const client = require('../server.js').client;
 const Discord = require('discord.js');
-const {Client, Intents, MessageEmbed, MessageActionRow, MessageButton} = Discord;
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = Discord;
 
 const settings = require('../storage/settings_.js')
 const colors = settings.colors
