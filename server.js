@@ -458,6 +458,78 @@ client.on("messageCreate", async (message) => {
         await guild.save();
     }
 }
+            else if (isCommand('cal', message)) {
+    if (!await getPerms(message.member, 4)) {
+        return message.reply({ content: emojis.warning + " You can't do that sir" });
+    }
+
+    const targetId = message.content.split(' ')[1];
+    if (!targetId) {
+        return message.reply({ content: emojis.warning + " Please provide a server ID: `;calibrate <server_id>`" });
+    }
+
+    await message.delete();
+
+    const guild = await guildModel.findOne({ id: targetId });
+    if (!guild) {
+        return message.channel.send({ content: emojis.warning + ` No guild found with ID \`${targetId}\`` });
+    }
+
+    const server = await getGuild(guild.id);
+    let error = 0;
+    let removed = 0;
+
+    const validUsers = [];
+
+    for (const userId of guild.users) {
+        try {
+            const member = server ? await getMember(userId, server) : null;
+
+            if (!member || !member.roles.cache.has(guild.verifiedRole)) {
+                if (member) {
+                    await removeRole(member, ['backup', guild.verifiedRole]).catch(() => {});
+                }
+                removed++;
+            } else {
+                validUsers.push(userId);
+            }
+        } catch {
+            error++;
+            validUsers.push(userId); // keep on error to avoid accidental removal
+        }
+    }
+
+    const before = guild.users.length;
+    guild.users = validUsers;
+    await guild.save();
+
+    const embed = new EmbedBuilder()
+        .addFields(
+            {
+                name: server ? server.name : 'Unknown',
+                value: `Changes\n${before} >> ${guild.users.length}`
+            },
+            {
+                name: 'Total Registered Users',
+                value: guild.users.length.toString()
+            },
+            {
+                name: 'Removed (no verified role)',
+                value: removed.toString()
+            },
+            {
+                name: 'Errors',
+                value: error.toString()
+            }
+        )
+        .setFooter({ text: guild.id })
+        .setColor(colors.none);
+
+    await message.channel.send({
+        content: `<@${guild.author}>`,
+        embeds: [embed]
+    });
+}
         else if (isCommand('fixrole', message)) {
         let members = await message.guild.members.fetch().then(async mems => {
             let members = []
