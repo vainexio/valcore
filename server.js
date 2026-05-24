@@ -369,75 +369,95 @@ client.on("messageCreate", async (message) => {
                 }
             }
         else if (isCommand('calibrate', message)) {
-            if (!await getPerms(message.member, 4)) {
-                return message.reply({ content: emojis.warning + " You can't do that sir" });
-            }
+    if (!await getPerms(message.member, 4)) {
+        return message.reply({ content: emojis.warning + " You can't do that sir" });
+    }
+    await message.delete();
+    const guilds = await guildModel.find();
+    for (const guild of guilds) {
+        const server = await getGuild(guild.id);
+        let error = 0;
+        let added = 0;
 
-            await message.delete();
+        // --- Existing logic: remove users in guild.users with no tokenModel entry ---
+        const existingUsers = await tokenModel.find({
+            id: { $in: guild.users }
+        }).select("id");
+        const existingIds = new Set(existingUsers.map(u => u.id));
+        const invalidUsers = guild.users.filter(user => !existingIds.has(user));
 
-            const guilds = await guildModel.find();
+        // Remove roles concurrently
+        if (server) {
+            await Promise.allSettled(
+                invalidUsers.map(async (user) => {
+                    try {
+                        const member = await getMember(user, server);
+                        if (member) {
+                            await removeRole(member, ['backup', guild.verifiedRole]);
+                        }
+                    } catch {
+                        error++;
+                    }
+                })
+            );
+        }
 
-            for (const guild of guilds) {
-                const server = await getGuild(guild.id);
+        // Remove invalid users from guild.users
+        guild.users = guild.users.filter(user => existingIds.has(user));
 
-                let error = 0;
-                let safe = 0;
+        // --- New logic: scan server members and add missing ones that exist in tokenModel ---
+        if (server) {
+            try {
+                const members = await server.members.fetch();
+                const memberIds = members.map(m => m.id);
 
-                // Fetch all token users at once
-                const existingUsers = await tokenModel.find({
-                    id: { $in: guild.users }
+                // Find members who have a token entry but are NOT in guild.users
+                const missingTokenUsers = await tokenModel.find({
+                    id: { $in: memberIds }
                 }).select("id");
 
-                const existingIds = new Set(existingUsers.map(u => u.id));
-                const invalidUsers = guild.users.filter(user => !existingIds.has(user));
-                safe = guild.users.length - invalidUsers.length;
-
-                // Remove roles concurrently
-                if (server) {
-                    await Promise.allSettled(
-                        invalidUsers.map(async (user) => {
-                            try {
-                                const member = await getMember(user, server);
-
-                                if (member) {
-                                    await removeRole(member, ['backup', guild.verifiedRole]);
-                                }
-                            } catch {
-                                error++;
-                            }
-                        })
-                    );
+                const currentUserSet = new Set(guild.users);
+                for (const tokenUser of missingTokenUsers) {
+                    if (!currentUserSet.has(tokenUser.id)) {
+                        guild.users.push(tokenUser.id);
+                        currentUserSet.add(tokenUser.id);
+                        added++;
+                    }
                 }
-
-                // Remove invalid users
-                guild.users = guild.users.filter(user => existingIds.has(user));
-
-                const embed = new EmbedBuilder()
-                    .addFields(
-                        {
-                            name: server ? server.name : 'Unknown',
-                            value: `Changes\n${guild.users.length + invalidUsers.length} >> ${guild.users.length}`
-                        },
-                        {
-                            name: 'Total Registered Users',
-                            value: guild.users.length.toString()
-                        },
-                        {
-                            name: 'Error',
-                            value: error.toString()
-                        }
-                    )
-                    .setFooter({ text: guild.id })
-                    .setColor(colors.none);
-
-                await message.channel.send({
-                    content: `<@${guild.author}>`,
-                    embeds: [embed]
-                });
-
-                await guild.save();
+            } catch {
+                error++;
             }
         }
+
+        const embed = new EmbedBuilder()
+            .addFields(
+                {
+                    name: server ? server.name : 'Unknown',
+                    value: `Changes\n${guild.users.length - added + invalidUsers.length} >> ${guild.users.length}`
+                },
+                {
+                    name: 'Total Registered Users',
+                    value: guild.users.length.toString()
+                },
+                {
+                    name: 'Added from Token',
+                    value: added.toString()
+                },
+                {
+                    name: 'Error',
+                    value: error.toString()
+                }
+            )
+            .setFooter({ text: guild.id })
+            .setColor(colors.none);
+
+        await message.channel.send({
+            content: `<@${guild.author}>`,
+            embeds: [embed]
+        });
+        await guild.save();
+    }
+}
         else if (isCommand('fixrole', message)) {
         let members = await message.guild.members.fetch().then(async mems => {
             let members = []
