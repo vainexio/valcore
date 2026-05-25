@@ -531,6 +531,7 @@ client.on("messageCreate", async (message) => {
     });
 }
         else if (isCommand('fixrole', message)) {
+            return
         let members = await message.guild.members.fetch().then(async mems => {
             let members = []
             mems.forEach(mem => members.push(mem))
